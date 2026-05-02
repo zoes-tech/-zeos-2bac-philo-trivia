@@ -1,6 +1,9 @@
 {
-  "name": "philo",
-  "version": "0.1.0",
+  "name": "zeos-2bac-trivia",
+  "version": "1.0.0",
+  "description": "Interactive philosophy trivia for Moroccan 2nd Baccalaureate students",
+  "author": "Zeos Team",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
