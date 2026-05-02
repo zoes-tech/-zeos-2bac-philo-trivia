@@ -22,7 +22,24 @@ const amiri = Amiri({
 export const metadata: Metadata = {
   title: "رحلة الفيلسوف - لعبة الفلسفة 2 بك",
   description: "لعبة تعليمية مجانية لمادة الفلسفة للسنة الثانية بكالوريا - مراجعة وتمارين للمغرب",
-  keywords: ["فلسفة 2 بك", "الفلسفة للسنة الثانية بكالوريا", "مراجعة الفلسفة", "اختبار الفلسفة", "تمارين فلسفة 2Bac", "بكالوريا فلسفة", "philosophy quiz 2bac", "امتحان فلسفة", "دروس الفلسفة"],
+  keywords: [
+    "zoes trivia tech app",
+    "philosophy trivia app", 
+    "moroccan philosophy", 
+    "philosophy quiz 2bac",
+    "فلسفة 2 بك",
+    "الفلسفة للسنة الثانية بكالوريا",
+    "مراجعة الفلسفة",
+    "اختبار الفلسفة",
+    "تمارين فلسفة 2Bac",
+    "بكالوريا فلسفة",
+    "امتحان فلسفة", 
+    "دروس الفلسفة",
+    "trivia app morocco",
+    "تعليم morocco",
+    "philosophie 2eme annee bac",
+    "quiz philosophie"
+  ],
   openGraph: {
     title: "رحلة الفيلسوف - لعبة الفلسفة 2 بك",
     description: "لعبة تعليمية مجانية لمادة الفلسفة للسنة الثانية بكالوريا",
