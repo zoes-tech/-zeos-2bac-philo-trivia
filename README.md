@@ -11,3 +11,4 @@ Philosophy trivia app for Moroccan 2nd Bac students preparing for exams.
 Built with Next.js + Tailwind + Framer Motion. MIT Licensed.
 
 🇲🇦 Open source - Made for Moroccan students
+under support of MoulayDriss high-fes-morroco
