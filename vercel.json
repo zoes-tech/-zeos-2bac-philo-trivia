@@ -1,39 +1,5 @@
 {
   "github": {
     "silent": true
-  },
-  "rewrites": [
-    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
-    { "source": "/robots.txt", "destination": "/robots.txt" },
-    { "source": "/google4fe2f0dccb992b2c.html", "destination": "/google4fe2f0dccb992b2c.html" }
-  ],
-  "headers": [
-    {
-      "source": "/sitemap.xml",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/xml"
-        }
-      ]
-    },
-    {
-      "source": "/robots.txt",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/plain"
-        }
-      ]
-    },
-    {
-      "source": "/google4fe2f0dccb992b2c.html",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/html"
-        }
-      ]
-    }
-  ]
+  }
 }
