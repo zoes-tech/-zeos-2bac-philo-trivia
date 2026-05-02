@@ -37,9 +37,9 @@ export default function Home() {
   const levelData = getDataForLevel();
 
   const calculateTimeLimit = (totalQuestions: number): number => {
-    if (totalQuestions <= 10) return 10;
-    if (totalQuestions <= 25) return 8;
-    return 5;
+    if (totalQuestions <= 10) return 20;
+    if (totalQuestions <= 25) return 18;
+    return 15;
   };
 
   const handleQuizStart = (module: Module) => {
