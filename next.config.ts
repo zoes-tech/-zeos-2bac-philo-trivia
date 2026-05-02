@@ -5,11 +5,16 @@ const withPWAConfig = withPWA({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
-
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  trailingSlash: true,
+  reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default withPWAConfig(nextConfig);
