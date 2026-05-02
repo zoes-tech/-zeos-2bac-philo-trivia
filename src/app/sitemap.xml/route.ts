@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const dynamic = "force-static";
 
 export async function GET() {
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -14,11 +13,9 @@ export async function GET() {
   </url>
 </urlset>`;
   return new NextResponse(sitemap, {
+    status: 200,
     headers: {
       "Content-Type": "application/xml",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      "Pragma": "no-cache",
-      "Expires": "0",
     },
   });
 }
