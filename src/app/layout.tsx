@@ -20,8 +20,17 @@ const amiri = Amiri({
 });
 
 export const metadata: Metadata = {
-  title: "رحلة الفيلسوف",
-  description: "لعبة تعليمية لمادة الفلسفة - المغرب",
+  title: "رحلة الفيلسوف - لعبة الفلسفة 2 بك",
+  description: "لعبة تعليمية مجانية لمادة الفلسفة للسنة الثانية بكالوريا - مراجعة وتمارين للمغرب",
+  keywords: ["فلسفة 2 بك", "الفلسفة للسنة الثانية بكالوريا", "مراجعة الفلسفة", "اختبار الفلسفة", "تمارين فلسفة 2Bac", "بكالوريا فلسفة", "philosophy quiz 2bac", "امتحان فلسفة", "دروس الفلسفة"],
+  openGraph: {
+    title: "رحلة الفيلسوف - لعبة الفلسفة 2 بك",
+    description: "لعبة تعليمية مجانية لمادة الفلسفة للسنة الثانية بكالوريا",
+    type: "website",
+    locale: "ar_MA",
+    alternateLocale: "fr_FR",
+  },
+  metadataBase: new URL("https://zeos-2bac-philo-trivia.vercel.app"),
   manifest: "/manifest.json",
 };
 
