@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://zeos-2bac-philo-trivia.vercel.app/sitemap.xml
