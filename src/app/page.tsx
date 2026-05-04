@@ -4,7 +4,7 @@ import { LevelMap } from "@/components/LevelMap";
 import { QuizCard } from "@/components/QuizCard";
 import { PhilosopherProfile } from "@/components/PhilosopherProfile";
 import { QuizResultCard } from "@/components/QuizResultCard";
-import { useGameStore } from "@/store/useStore";
+import { useGameStore, type QuizReviewItem } from "@/store/useStore";
 import { useScoring, useScoreAnimation } from "@/contexts/ScoringProvider";
 import commonCoreData from "@/data/curriculum/common-core.json";
 import firstBacData from "@/data/curriculum/1st-bac.json";
@@ -49,8 +49,8 @@ export default function Home() {
     }
   };
 
-  const handleAnswer = (isCorrect: boolean) => {
-    answerQuiz(isCorrect);
+  const handleAnswer = (answer: QuizReviewItem) => {
+    answerQuiz(answer);
     // Auto next after delay instead of endQuiz
     setTimeout(() => {
       const store = useGameStore.getState();
@@ -60,6 +60,15 @@ export default function Home() {
         endQuiz();
       }
     }, 1500);
+  };
+
+  const handleRetryLastQuiz = () => {
+    if (!lastQuizResult) return;
+    const quizModule = [...(commonCoreData as Module[]), ...(firstBacData as Module[]), ...(secondBacData as Module[]), ...(secondBacKnowledgeData as Module[]), ...(secondBacMoralityData as Module[])]
+      .find((item) => item.id === lastQuizResult.moduleId);
+    if (quizModule?.quiz?.length) {
+      startQuiz(quizModule.id, quizModule.quiz);
+    }
   };
 
   return (
@@ -145,6 +154,7 @@ export default function Home() {
               result={lastQuizResult}
               totalPoints={score}
               onClose={clearLastQuizResult}
+              onRetry={handleRetryLastQuiz}
             />
           )}
 

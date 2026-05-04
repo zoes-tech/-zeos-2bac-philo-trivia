@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Question } from '@/types';
 
+export interface QuizReviewItem {
+  questionId: string;
+  question: string;
+  category?: string;
+  selectedAnswer: string | null;
+  correctAnswer: string;
+  isCorrect: boolean;
+}
+
 interface GameState {
     currentLevel: 'common-core' | '1st-bac' | '2nd-bac';
     xp: number;
@@ -14,6 +23,7 @@ interface GameState {
       currentIndex: number;
       score: number;
       total: number;
+      reviewItems: QuizReviewItem[];
     } | null;
     lastQuizResult: {
       moduleId: string;
@@ -22,6 +32,7 @@ interface GameState {
       accuracy: number;
       xpEarned: number;
       completedAt: string;
+      reviewItems: QuizReviewItem[];
     } | null;
 
     setLevel: (level: 'common-core' | '1st-bac' | '2nd-bac') => void;
@@ -30,7 +41,7 @@ interface GameState {
     completeQuiz: (quizId: string) => void;
     unlockPhilosopher: (philosopherId: string) => void;
     startQuiz: (moduleId: string, questions: Question[]) => void;
-    answerQuiz: (correct: boolean) => void;
+    answerQuiz: (answer: QuizReviewItem) => void;
     nextQuizQuestion: () => void;
     endQuiz: () => void;
     clearLastQuizResult: () => void;
@@ -68,17 +79,19 @@ export const useGameStore = create<GameState>()(
                     questions,
                     currentIndex: 0,
                     score: 0,
-                    total: questions.length
+                    total: questions.length,
+                    reviewItems: []
                 }
             }),
-            answerQuiz: (correct) => set((state) => {
+            answerQuiz: (answer) => set((state) => {
                 if (!state.currentQuiz) return state;
-                const newScore = state.currentQuiz.score + (correct ? 1 : 0);
+                const newScore = state.currentQuiz.score + (answer.isCorrect ? 1 : 0);
                 return {
                     ...state,
                     currentQuiz: {
                         ...state.currentQuiz,
-                        score: newScore
+                        score: newScore,
+                        reviewItems: [...state.currentQuiz.reviewItems, answer]
                     }
                 };
             }),
@@ -111,6 +124,7 @@ export const useGameStore = create<GameState>()(
                             accuracy,
                             xpEarned,
                             completedAt: new Date().toISOString(),
+                            reviewItems: state.currentQuiz!.reviewItems,
                         },
                     }));
                     const unlocks = state.currentQuiz.questions[0]?.unlocks;

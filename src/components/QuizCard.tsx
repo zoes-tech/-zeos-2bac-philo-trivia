@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Flame, Zap, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,10 +9,11 @@ import { LiquidButton } from "@/components/ui/LiquidButton";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Question } from "@/types";
 import { useScoring, useScoreAnimation, useStreakAnimation } from "@/contexts/ScoringProvider";
+import type { QuizReviewItem } from "@/store/useStore";
 
 interface QuizCardProps {
     question: Question;
-    onAnswer: (isCorrect: boolean) => void;
+    onAnswer: (answer: QuizReviewItem) => void;
     currentIndex?: number;
     total?: number;
     score?: number;
@@ -36,6 +37,15 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
     const { submitAnswer, currentStreak, multiplier, isGodMode, rank, rankEmoji } = useScoring();
     const displayScore = useScoreAnimation(score || 0);
     const { displayStreak, isPopping } = useStreakAnimation(currentStreak);
+
+    const buildReviewItem = useCallback((selectedIndex: number | null, isCorrect: boolean): QuizReviewItem => ({
+        questionId: question.id,
+        question: question.question,
+        category: question.category,
+        selectedAnswer: selectedIndex === null ? null : shuffledOptions[selectedIndex],
+        correctAnswer: shuffledOptions[shuffledCorrectIndex],
+        isCorrect,
+    }), [question, shuffledCorrectIndex, shuffledOptions]);
 
     useEffect(() => {
         const resetQuestionState = window.setTimeout(() => {
@@ -69,9 +79,8 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
     useEffect(() => {
         if (isTimeUp && !isSubmitted) {
             const submitTimeout = window.setTimeout(() => {
-                const isCorrect = selectedOption === shuffledCorrectIndex;
                 submitAnswer(false, timeLimit);
-                onAnswer(isCorrect);
+                onAnswer(buildReviewItem(selectedOption, false));
                 setIsSubmitted(true);
             }, 0);
             const resetTimeout = window.setTimeout(() => {
@@ -84,7 +93,7 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
                 window.clearTimeout(resetTimeout);
             };
         }
-    }, [isTimeUp, isSubmitted, selectedOption, shuffledCorrectIndex, submitAnswer, onAnswer, timeLimit]);
+    }, [isTimeUp, isSubmitted, selectedOption, submitAnswer, onAnswer, timeLimit, buildReviewItem]);
 
     const handleSelect = (index: number) => {
         if (isSubmitted || isTimeUp) return;
@@ -107,7 +116,7 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
         }
 
         setIsSubmitted(true);
-        onAnswer(isCorrect);
+        onAnswer(buildReviewItem(selectedOption, isCorrect));
 
         setTimeout(() => {
             setIsSubmitted(false);
