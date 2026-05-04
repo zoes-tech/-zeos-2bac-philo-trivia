@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Trophy, Flame, Zap, TrendingUp, Calendar } from "lucide-react";
+import { Trophy, Flame, Zap, Calendar } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useScoring } from "@/contexts/ScoringProvider";
 import { cn } from "@/lib/utils";
@@ -81,7 +81,7 @@ export function StatsCard() {
         >
           <div className="flex items-center justify-center gap-2 text-purple-300">
             <Flame className="w-5 h-5 animate-pulse" />
-            <span className="font-bold">وضع الإله مفعل!</span>
+            <span className="font-bold">نمط الحكيم مفعل!</span>
             <Flame className="w-5 h-5 animate-pulse" />
           </div>
         </motion.div>
@@ -109,7 +109,7 @@ export function StatsCard() {
           />
         </div>
         <div className="mt-1 text-xs text-gray-500 text-center">
-          {currentStreak >= 10 ? "🔥 God Mode!" : `${10 - currentStreak} إجابات صحيحة للوصول لـ God Mode`}
+          {currentStreak >= 10 ? "🔥 نمط الحكيم!" : `${10 - currentStreak} إجابات صحيحة للوصول لنمط الحكيم`}
         </div>
       </div>
     </GlassCard>

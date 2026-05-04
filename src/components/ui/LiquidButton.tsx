@@ -4,11 +4,11 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import React from "react";
 
-interface LiquidButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+type LiquidButtonProps = React.ComponentProps<typeof motion.button> & {
     children: React.ReactNode;
     className?: string;
     variant?: "primary" | "secondary" | "danger";
-}
+};
 
 export function LiquidButton({ children, className, variant = "primary", ...props }: LiquidButtonProps) {
     const getGradient = () => {
@@ -30,7 +30,7 @@ export function LiquidButton({ children, className, variant = "primary", ...prop
                 "transition-shadow duration-300",
                 className
             )}
-            {...props as any}
+            {...props}
         >
             <div className={cn(
                 "absolute inset-0 bg-gradient-to-r opacity-90 transition-opacity duration-300",

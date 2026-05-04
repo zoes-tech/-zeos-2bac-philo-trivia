@@ -12,7 +12,10 @@ const LEVELS = [
 ] as const;
 
 export function LevelMap() {
-    const { currentLevel, setLevel } = useGameStore();
+    const { currentLevel, setLevel, xp, completedQuizzes } = useGameStore();
+
+    const hasCompleted = (moduleIds: string[]) =>
+        completedQuizzes.some((quizId) => moduleIds.includes(quizId));
 
     return (
         <div className="flex flex-col items-center gap-8 py-10 w-full max-w-lg mx-auto relative">
@@ -21,7 +24,12 @@ export function LevelMap() {
 
             {LEVELS.map((level, index) => {
                 const isActive = currentLevel === level.id;
-                const isLocked = index > 0 && LEVELS[index - 1].id !== currentLevel; // Simplified unlock logic
+                const isLocked =
+                    level.id === '1st-bac'
+                        ? xp < 5 && !hasCompleted(['intro-philosophy'])
+                        : level.id === '2nd-bac'
+                          ? xp < 10 && !hasCompleted(['humanity', 'effectiveness'])
+                          : false;
 
                 return (
                     <motion.button
@@ -58,6 +66,11 @@ export function LevelMap() {
                                     isActive ? "text-cyan-300" : "text-slate-300"
                                 )}>{level.label}</h3>
                                 <p className="text-sm text-slate-400">{level.description}</p>
+                                {isLocked && (
+                                    <p className="mt-1 text-xs text-cyan-300/80">
+                                        أكمل المرحلة السابقة لفتح هذا المستوى
+                                    </p>
+                                )}
                             </div>
                         </div>
 

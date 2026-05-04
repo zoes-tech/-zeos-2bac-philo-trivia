@@ -16,11 +16,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
-import type { Module, Question, Philosopher } from "@/types";
+import type { Module, Philosopher } from "@/types";
 
 export default function Home() {
-  const { currentLevel, xp, unlockedPhilosophers, currentQuiz, startQuiz, answerQuiz, endQuiz } = useGameStore();
-  const { score, currentStreak, highestStreak, multiplier, isGodMode, rank, rankEmoji } = useScoring();
+  const { currentLevel, unlockedPhilosophers, currentQuiz, startQuiz, answerQuiz, endQuiz } = useGameStore();
+  const { score, currentStreak, multiplier, rank, rankEmoji } = useScoring();
   const displayScore = useScoreAnimation(score);
   const [viewingPhilosopher, setViewingPhilosopher] = useState<Philosopher | null>(null);
 

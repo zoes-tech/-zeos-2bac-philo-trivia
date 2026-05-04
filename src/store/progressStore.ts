@@ -40,7 +40,6 @@ const getToday = () => new Date().toISOString().split('T')[0];
 const checkConsecutiveDays = (lastDate: string | null): { streak: number; shouldReset: boolean } => {
   if (!lastDate) return { streak: 0, shouldReset: false };
 
-  const last = new Date(lastDate);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -56,7 +55,7 @@ const checkConsecutiveDays = (lastDate: string | null): { streak: number; should
 
 export const useProgressStore = create<ProgressStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       xp: 0,
       level: 'common-core',
       unlockedModules: ['common-core'],

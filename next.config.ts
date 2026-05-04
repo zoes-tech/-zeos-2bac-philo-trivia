@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withPWA from "@ducanh2912/next-pwa";
+import path from "node:path";
 
 const withPWAConfig = withPWA({
   dest: "public",
@@ -14,7 +15,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  turbopack: {},
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
 };
 
 export default withPWAConfig(nextConfig);

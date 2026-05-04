@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 
 interface ScoringState {
   score: number;
@@ -26,10 +26,10 @@ const ScoringContext = createContext<ScoringContextType | undefined>(undefined);
 const STORAGE_KEY = 'zeos-stats';
 
 const RANKS = [
-  { minScore: 0, maxScore: 1000, rank: 'Novice Philosophe', emoji: '📜' },
-  { minScore: 1001, maxScore: 5000, rank: 'Géologue Amateur', emoji: '🏔️' },
-  { minScore: 5001, maxScore: 20000, rank: 'Savant de l\'Atlas', emoji: '🦁' },
-  { minScore: 20001, maxScore: Infinity, rank: 'Maître de l\'Anatexie', emoji: '💎' },
+  { minScore: 0, maxScore: 1000, rank: 'متأمل مبتدئ', emoji: '📜' },
+  { minScore: 1001, maxScore: 5000, rank: 'تلميذ سقراط', emoji: '🦉' },
+  { minScore: 5001, maxScore: 20000, rank: 'فيلسوف ناشئ', emoji: '🧠' },
+  { minScore: 20001, maxScore: Infinity, rank: 'حكيم الأطلس', emoji: '💎' },
 ];
 
 const getRankInfo = (score: number): { rank: string; emoji: string } => {
@@ -78,7 +78,7 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
         highestStreak: 0,
         dailyStreak: 0,
         lastPlayedDate: null,
-        rank: 'Novice Philosophe',
+        rank: 'متأمل مبتدئ',
         rankEmoji: '📜',
         multiplier: 1.0,
         isGodMode: false,
@@ -90,7 +90,7 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const { dailyStreak, shouldReset } = checkDailyStreak(parsed.lastPlayedDate);
+        const { shouldReset } = checkDailyStreak(parsed.lastPlayedDate);
         const rankInfo = getRankInfo(parsed.score);
         const multiplier = calculateMultiplier(parsed.currentStreak);
 
@@ -114,7 +114,7 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
       highestStreak: 0,
       dailyStreak: 0,
       lastPlayedDate: null,
-      rank: 'Novice Philosophe',
+      rank: 'متأمل مبتدئ',
       rankEmoji: '📜',
       multiplier: 1.0,
       isGodMode: false,
@@ -133,7 +133,7 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
   const submitAnswer = useCallback((isCorrect: boolean, timeTaken?: number) => {
     setState((prevState) => {
       const today = new Date().toISOString();
-      const { dailyStreak, shouldReset } = checkDailyStreak(prevState.lastPlayedDate);
+      const { shouldReset } = checkDailyStreak(prevState.lastPlayedDate);
 
       if (!isCorrect) {
         const newDailyStreak = shouldReset ? 0 : prevState.dailyStreak;
@@ -152,7 +152,7 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
         };
       }
 
-      let points = 100;
+      const points = 100;
       let speedMultiplier = 1.0;
 
       if (timeTaken !== undefined && timeTaken !== null && timeTaken < 5) {
@@ -192,7 +192,7 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
       highestStreak: 0,
       dailyStreak: 0,
       lastPlayedDate: null,
-      rank: 'Novice Philosophe',
+      rank: 'متأمل مبتدئ',
       rankEmoji: '📜',
       multiplier: 1.0,
       isGodMode: false,
@@ -223,10 +223,16 @@ export const useScoring = (): ScoringContextType => {
 
 export const useScoreAnimation = (targetScore: number, duration: number = 1000) => {
   const [displayScore, setDisplayScore] = useState(0);
+  const displayScoreRef = useRef(0);
+
+  useEffect(() => {
+    displayScoreRef.current = displayScore;
+  }, [displayScore]);
 
   useEffect(() => {
     let startTime: number | null = null;
-    const startScore = displayScore;
+    const startScore = displayScoreRef.current;
+    let frameId = 0;
 
     const animate = (currentTime: number) => {
       if (startTime === null) startTime = currentTime;
@@ -237,11 +243,12 @@ export const useScoreAnimation = (targetScore: number, duration: number = 1000) 
       setDisplayScore(Math.round(startScore + (targetScore - startScore) * easeOutQuart));
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        frameId = requestAnimationFrame(animate);
       }
     };
 
-    requestAnimationFrame(animate);
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
   }, [targetScore, duration]);
 
   return displayScore;
@@ -250,15 +257,24 @@ export const useScoreAnimation = (targetScore: number, duration: number = 1000) 
 export const useStreakAnimation = (targetStreak: number) => {
   const [displayStreak, setDisplayStreak] = useState(0);
   const [isPopping, setIsPopping] = useState(false);
+  const displayStreakRef = useRef(0);
 
   useEffect(() => {
-    if (targetStreak > displayStreak) {
-      setIsPopping(true);
-      setTimeout(() => setIsPopping(false), 300);
+    displayStreakRef.current = displayStreak;
+  }, [displayStreak]);
+
+  useEffect(() => {
+    const startStreak = displayStreakRef.current;
+    let popTimeout: number | undefined;
+    let unpopTimeout: number | undefined;
+    let frameId = 0;
+
+    if (targetStreak > startStreak) {
+      popTimeout = window.setTimeout(() => setIsPopping(true), 0);
+      unpopTimeout = window.setTimeout(() => setIsPopping(false), 300);
     }
 
     let startTime: number | null = null;
-    const startStreak = displayStreak;
 
     const animate = (currentTime: number) => {
       if (startTime === null) startTime = currentTime;
@@ -274,12 +290,17 @@ export const useStreakAnimation = (targetStreak: number) => {
       setDisplayStreak(Math.round(startStreak + (targetStreak - startStreak) * easeOutBack(progress)));
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        frameId = requestAnimationFrame(animate);
       }
     };
 
-    requestAnimationFrame(animate);
-  }, [targetStreak, displayStreak]);
+    frameId = requestAnimationFrame(animate);
+    return () => {
+      if (popTimeout) window.clearTimeout(popTimeout);
+      if (unpopTimeout) window.clearTimeout(unpopTimeout);
+      cancelAnimationFrame(frameId);
+    };
+  }, [targetStreak]);
 
   return { displayStreak, isPopping };
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Flame, Zap, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,30 +23,31 @@ interface QuizCardProps {
 export function QuizCard({ question, onAnswer, currentIndex, total, score, category, timeLimit = 8 }: QuizCardProps) {
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
-    const [shuffledCorrectIndex, setShuffledCorrectIndex] = useState<number>(0);
-    const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+    const shuffledOptions = useMemo(() => shuffleArray(question.options), [question]);
+    const shuffledCorrectIndex = useMemo(
+        () => shuffledOptions.findIndex((option) => option === question.options[question.correctAnswer]),
+        [question, shuffledOptions]
+    );
+    const [questionStartTime, setQuestionStartTime] = useState<number>(() => Date.now());
     const [earnedPoints, setEarnedPoints] = useState<number>(0);
     const [timeLeft, setTimeLeft] = useState<number>(timeLimit);
     const [isTimeUp, setIsTimeUp] = useState<boolean>(false);
 
-    const { submitAnswer, currentStreak, highestStreak, multiplier, isGodMode, rank, rankEmoji } = useScoring();
+    const { submitAnswer, currentStreak, multiplier, isGodMode, rank, rankEmoji } = useScoring();
     const displayScore = useScoreAnimation(score || 0);
     const { displayStreak, isPopping } = useStreakAnimation(currentStreak);
 
     useEffect(() => {
-        const shuffled = shuffleArray(question.options);
-        setShuffledOptions(shuffled);
-        const newCorrectIndex = shuffled.findIndex(
-            (option) => option === question.options[question.correctAnswer]
-        );
-        setShuffledCorrectIndex(newCorrectIndex);
-        setSelectedOption(null);
-        setIsSubmitted(false);
-        setQuestionStartTime(Date.now());
-        setEarnedPoints(0);
-        setTimeLeft(timeLimit);
-        setIsTimeUp(false);
+        const resetQuestionState = window.setTimeout(() => {
+            setSelectedOption(null);
+            setIsSubmitted(false);
+            setQuestionStartTime(Date.now());
+            setEarnedPoints(0);
+            setTimeLeft(timeLimit);
+            setIsTimeUp(false);
+        }, 0);
+
+        return () => window.clearTimeout(resetQuestionState);
     }, [question, timeLimit]);
 
     useEffect(() => {
@@ -67,14 +68,21 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
 
     useEffect(() => {
         if (isTimeUp && !isSubmitted) {
-            const isCorrect = selectedOption === shuffledCorrectIndex;
-            submitAnswer(false, timeLimit);
-            onAnswer(isCorrect);
-            setIsSubmitted(true);
-            setTimeout(() => {
+            const submitTimeout = window.setTimeout(() => {
+                const isCorrect = selectedOption === shuffledCorrectIndex;
+                submitAnswer(false, timeLimit);
+                onAnswer(isCorrect);
+                setIsSubmitted(true);
+            }, 0);
+            const resetTimeout = window.setTimeout(() => {
                 setIsSubmitted(false);
                 setSelectedOption(null);
             }, 1500);
+
+            return () => {
+                window.clearTimeout(submitTimeout);
+                window.clearTimeout(resetTimeout);
+            };
         }
     }, [isTimeUp, isSubmitted, selectedOption, shuffledCorrectIndex, submitAnswer, onAnswer, timeLimit]);
 
@@ -90,7 +98,7 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
         const isCorrect = selectedOption === shuffledCorrectIndex;
 
         if (isCorrect) {
-            let points = 100;
+            const points = 100;
             let speedMultiplier = 1.0;
             if (timeTaken < 5) speedMultiplier = 1.5;
             const totalMultiplier = speedMultiplier * multiplier;
@@ -111,19 +119,6 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
         }, 1500);
     };
 
-    const handleTimeUp = () => {
-        if (isSubmitted || isTimeUp) return;
-        setIsTimeUp(true);
-        const isCorrect = selectedOption === shuffledCorrectIndex;
-        submitAnswer(false, timeLimit);
-        onAnswer(isCorrect);
-        setIsSubmitted(true);
-        setTimeout(() => {
-            setIsSubmitted(false);
-            setSelectedOption(null);
-        }, 1500);
-    };
-
     return (
         <GlassCard
             className="w-full max-w-md mx-auto !p-8 border-cyan-500/20"
@@ -133,9 +128,9 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                {currentIndex && total && (
+                {currentIndex !== undefined && total !== undefined && (
                     <div className="text-center mb-4 text-sm text-gray-400">
-                        س {currentIndex} / {total} | {category} | النتيجة: {displayScore}%
+                        س {currentIndex + 1} / {total} | {category} | الإجابات الصحيحة: {displayScore}
                     </div>
                 )}
 
@@ -208,7 +203,7 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
                             className="mb-4 text-center"
                         >
                             <div className="inline-block px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-bold shadow-lg shadow-purple-500/50">
-                                🔥 GOD MODE ACTIVATED! 🔥
+                                🔥 نمط الحكيم مفعل! 🔥
                             </div>
                         </motion.div>
                     )}

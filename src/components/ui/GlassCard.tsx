@@ -4,11 +4,11 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import React from "react";
 
-interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
+type GlassCardProps = React.ComponentProps<typeof motion.div> & {
     children: React.ReactNode;
     className?: string;
     hoverEffect?: boolean;
-}
+};
 
 export function GlassCard({ children, className, hoverEffect = false, ...props }: GlassCardProps) {
     return (
@@ -21,7 +21,7 @@ export function GlassCard({ children, className, hoverEffect = false, ...props }
                 "glass-panel rounded-2xl p-6 relative overflow-hidden",
                 className
             )}
-            {...props as any}
+            {...props}
         >
             {/* Glossy reflection effect */}
             <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] bg-gradient-to-br from-transparent via-white/5 to-transparent rotate-45 pointer-events-none" />
