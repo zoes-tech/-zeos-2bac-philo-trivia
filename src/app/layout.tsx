@@ -5,6 +5,12 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { BackgroundOrbs } from "@/components/ui/BackgroundOrbs";
 import { ScoringProvider } from "@/contexts/ScoringProvider";
+import { StructuredData } from "@/components/StructuredData";
+
+const siteUrl = "https://zeos-2bac-philo-trivia.vercel.app";
+const siteTitle = "رحلة الفيلسوف | اختبار الفلسفة للباكالوريا";
+const siteDescription =
+  "تطبيق عربي مجاني لمراجعة واختبار دروس الفلسفة لتلاميذ الباكالوريا بالمغرب، مع أسئلة تفاعلية، نظام نقاط، ومراجعة للأخطاء.";
 
 const cairo = Cairo({
   subsets: ["arabic"],
@@ -20,39 +26,84 @@ const amiri = Amiri({
 });
 
 export const metadata: Metadata = {
-  title: "رحلة الفيلسوف - لعبة الفلسفة 2 بك",
-  description: "لعبة تعليمية مجانية لمادة الفلسفة للسنة الثانية بكالوريا - مراجعة وتمارين للمغرب",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: siteTitle,
+    template: "%s | رحلة الفيلسوف",
+  },
+  description: siteDescription,
+  applicationName: "رحلة الفيلسوف",
+  authors: [{ name: "Zoes Tech", url: "https://github.com/zoes-tech/-zeos-2bac-philo-trivia" }],
+  creator: "Zoes Tech",
+  publisher: "Zoes Tech",
+  category: "education",
   keywords: [
-    "zoes trivia tech app",
-    "philosophy trivia app", 
-    "moroccan philosophy", 
-    "philosophy quiz 2bac",
+    "رحلة الفيلسوف",
     "فلسفة 2 بك",
+    "فلسفة الثانية باك",
     "الفلسفة للسنة الثانية بكالوريا",
+    "الفلسفة باكالوريا المغرب",
     "مراجعة الفلسفة",
     "اختبار الفلسفة",
     "تمارين فلسفة 2Bac",
     "بكالوريا فلسفة",
-    "امتحان فلسفة", 
+    "امتحان فلسفة",
     "دروس الفلسفة",
-    "trivia app morocco",
-    "تعليم morocco",
+    "الوضع البشري",
+    "المعرفة",
+    "الأخلاق",
+    "السياسة",
+    "philosophy trivia app",
+    "moroccan philosophy",
+    "philosophy quiz 2bac",
     "philosophie 2eme annee bac",
-    "quiz philosophie"
+    "quiz philosophie maroc"
   ],
+  alternates: {
+    canonical: "/",
+    languages: {
+      "ar-MA": "/",
+    },
+  },
   openGraph: {
-    title: "رحلة الفيلسوف - لعبة الفلسفة 2 بك",
-    description: "لعبة تعليمية مجانية لمادة الفلسفة للسنة الثانية بكالوريا",
+    title: siteTitle,
+    description: siteDescription,
+    url: siteUrl,
+    siteName: "رحلة الفيلسوف",
     type: "website",
     locale: "ar_MA",
     alternateLocale: "fr_FR",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "رحلة الفيلسوف - اختبار الفلسفة للباكالوريا",
+      },
+    ],
   },
-  metadataBase: new URL("https://zeos-2bac-philo-trivia.vercel.app"),
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+    images: ["/opengraph-image"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fdf6e3",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -73,6 +124,7 @@ export default function RootLayout({
           "font-sans"
         )}
       >
+        <StructuredData />
         <SpeedInsights />
         <BackgroundOrbs />
         <ScoringProvider>
