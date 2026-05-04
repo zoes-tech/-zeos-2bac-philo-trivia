@@ -3,6 +3,7 @@
 import { LevelMap } from "@/components/LevelMap";
 import { QuizCard } from "@/components/QuizCard";
 import { PhilosopherProfile } from "@/components/PhilosopherProfile";
+import { QuizResultCard } from "@/components/QuizResultCard";
 import { useGameStore } from "@/store/useStore";
 import { useScoring, useScoreAnimation } from "@/contexts/ScoringProvider";
 import commonCoreData from "@/data/curriculum/common-core.json";
@@ -19,7 +20,7 @@ import { cn } from "@/lib/utils";
 import type { Module, Philosopher } from "@/types";
 
 export default function Home() {
-  const { currentLevel, unlockedPhilosophers, currentQuiz, startQuiz, answerQuiz, endQuiz } = useGameStore();
+  const { currentLevel, unlockedPhilosophers, currentQuiz, lastQuizResult, startQuiz, answerQuiz, endQuiz, clearLastQuizResult } = useGameStore();
   const { score, currentStreak, multiplier, rank, rankEmoji } = useScoring();
   const displayScore = useScoreAnimation(score);
   const [viewingPhilosopher, setViewingPhilosopher] = useState<Philosopher | null>(null);
@@ -139,6 +140,14 @@ export default function Home() {
         </div>
       ) : (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10">
+          {lastQuizResult && (
+            <QuizResultCard
+              result={lastQuizResult}
+              totalPoints={score}
+              onClose={clearLastQuizResult}
+            />
+          )}
+
           <section>
             <h2 className="text-2xl font-bold font-serif mb-4 text-center text-white/90 drop-shadow-md">خريطة التعلم</h2>
             <LevelMap />

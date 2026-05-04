@@ -7,7 +7,8 @@ import { useScoring } from "@/contexts/ScoringProvider";
 import { cn } from "@/lib/utils";
 
 export function StatsCard() {
-  const { score, currentStreak, highestStreak, dailyStreak, multiplier, isGodMode, rank, rankEmoji } = useScoring();
+  const { score, currentStreak, highestStreak, totalAnswers, correctAnswers, multiplier, isGodMode, rank, rankEmoji } = useScoring();
+  const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
 
   const stats = [
     {
@@ -25,8 +26,8 @@ export function StatsCard() {
       bgColor: "bg-orange-500/10",
     },
     {
-      label: "سلسلة يومية",
-      value: dailyStreak.toString(),
+      label: "الدقة العامة",
+      value: `${accuracy}%`,
       icon: Calendar,
       color: "text-blue-400",
       bgColor: "bg-blue-500/10",
@@ -88,6 +89,10 @@ export function StatsCard() {
       )}
 
       <div className="mt-4 pt-4 border-t border-white/10">
+        <div className="mb-3 flex items-center justify-between text-sm">
+          <span className="text-gray-400">الإجابات الصحيحة</span>
+          <span className="font-bold text-white">{correctAnswers} / {totalAnswers}</span>
+        </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-400">السلسلة الحالية</span>
           <div className="flex items-center gap-2">

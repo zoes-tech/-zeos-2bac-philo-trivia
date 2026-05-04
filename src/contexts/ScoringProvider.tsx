@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { calculateAnswerScore, calculateStreakMultiplier, type AnswerScoreBreakdown } from '@/lib/scoring';
 
 interface ScoringState {
   score: number;
@@ -13,10 +14,13 @@ interface ScoringState {
   multiplier: number;
   isGodMode: boolean;
   totalTimeBonus: number;
+  totalAnswers: number;
+  correctAnswers: number;
+  lastAnswer: AnswerScoreBreakdown | null;
 }
 
 interface ScoringContextType extends ScoringState {
-  submitAnswer: (isCorrect: boolean, timeTaken?: number) => void;
+  submitAnswer: (isCorrect: boolean, timeTaken?: number) => AnswerScoreBreakdown;
   resetScore: () => void;
   getRankInfo: (score: number) => { rank: string; emoji: string };
 }
@@ -39,13 +43,6 @@ const getRankInfo = (score: number): { rank: string; emoji: string } => {
     }
   }
   return RANKS[0];
-};
-
-const calculateMultiplier = (streak: number): number => {
-  if (streak >= 10) return 2.0;
-  if (streak >= 5) return 1.5;
-  if (streak >= 3) return 1.2;
-  return 1.0;
 };
 
 const checkDailyStreak = (lastPlayedDate: string | null): { dailyStreak: number; shouldReset: boolean } => {
@@ -83,6 +80,9 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
         multiplier: 1.0,
         isGodMode: false,
         totalTimeBonus: 0,
+        totalAnswers: 0,
+        correctAnswers: 0,
+        lastAnswer: null,
       };
     }
 
@@ -92,7 +92,7 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
         const parsed = JSON.parse(stored);
         const { shouldReset } = checkDailyStreak(parsed.lastPlayedDate);
         const rankInfo = getRankInfo(parsed.score);
-        const multiplier = calculateMultiplier(parsed.currentStreak);
+        const multiplier = calculateStreakMultiplier(parsed.currentStreak);
 
         return {
           ...parsed,
@@ -102,6 +102,9 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
           multiplier,
           isGodMode: parsed.currentStreak >= 10,
           totalTimeBonus: parsed.totalTimeBonus || 0,
+          totalAnswers: parsed.totalAnswers || 0,
+          correctAnswers: parsed.correctAnswers || 0,
+          lastAnswer: null,
         };
       }
     } catch (error) {
@@ -119,6 +122,9 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
       multiplier: 1.0,
       isGodMode: false,
       totalTimeBonus: 0,
+      totalAnswers: 0,
+      correctAnswers: 0,
+      lastAnswer: null,
     };
   });
 
@@ -131,13 +137,16 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
   }, [state]);
 
   const submitAnswer = useCallback((isCorrect: boolean, timeTaken?: number) => {
+    const breakdown = calculateAnswerScore({ isCorrect, timeTaken, currentStreak: state.currentStreak });
+
     setState((prevState) => {
       const today = new Date().toISOString();
       const { shouldReset } = checkDailyStreak(prevState.lastPlayedDate);
+      const totalAnswers = prevState.totalAnswers + 1;
+      const correctAnswers = prevState.correctAnswers + (isCorrect ? 1 : 0);
 
       if (!isCorrect) {
         const newDailyStreak = shouldReset ? 0 : prevState.dailyStreak;
-        const newMultiplier = calculateMultiplier(0);
         const rankInfo = getRankInfo(prevState.score);
 
         return {
@@ -145,28 +154,21 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
           currentStreak: 0,
           dailyStreak: newDailyStreak,
           lastPlayedDate: today,
-          multiplier: newMultiplier,
+          multiplier: 1,
           isGodMode: false,
           rank: rankInfo.rank,
           rankEmoji: rankInfo.emoji,
+          totalAnswers,
+          correctAnswers,
+          lastAnswer: breakdown,
         };
       }
 
-      const points = 100;
-      let speedMultiplier = 1.0;
-
-      if (timeTaken !== undefined && timeTaken !== null && timeTaken < 5) {
-        speedMultiplier = 1.5;
-      }
-
-      const newCurrentStreak = prevState.currentStreak + 1;
+      const newCurrentStreak = breakdown.nextStreak;
       const newHighestStreak = Math.max(prevState.highestStreak, newCurrentStreak);
-      const streakMultiplier = calculateMultiplier(newCurrentStreak);
-      const totalMultiplier = speedMultiplier * streakMultiplier;
-      const earnedPoints = Math.round(points * totalMultiplier);
-      const newScore = prevState.score + earnedPoints;
+      const newScore = prevState.score + breakdown.totalPoints;
       const newDailyStreak = shouldReset ? 1 : prevState.dailyStreak + 1;
-      const newTotalTimeBonus = prevState.totalTimeBonus + 3;
+      const newTotalTimeBonus = prevState.totalTimeBonus + breakdown.speedBonus;
       const rankInfo = getRankInfo(newScore);
 
       return {
@@ -176,14 +178,18 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
         highestStreak: newHighestStreak,
         dailyStreak: newDailyStreak,
         lastPlayedDate: today,
-        multiplier: totalMultiplier,
+        multiplier: breakdown.multiplier,
         isGodMode: newCurrentStreak >= 10,
         rank: rankInfo.rank,
         rankEmoji: rankInfo.emoji,
         totalTimeBonus: newTotalTimeBonus,
+        totalAnswers,
+        correctAnswers,
+        lastAnswer: breakdown,
       };
     });
-  }, []);
+    return breakdown;
+  }, [state.currentStreak]);
 
   const resetScore = useCallback(() => {
     setState({
@@ -197,6 +203,9 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
       multiplier: 1.0,
       isGodMode: false,
       totalTimeBonus: 0,
+      totalAnswers: 0,
+      correctAnswers: 0,
+      lastAnswer: null,
     });
   }, []);
 

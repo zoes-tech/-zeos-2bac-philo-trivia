@@ -98,15 +98,11 @@ export function QuizCard({ question, onAnswer, currentIndex, total, score, categ
         const isCorrect = selectedOption === shuffledCorrectIndex;
 
         if (isCorrect) {
-            const points = 100;
-            let speedMultiplier = 1.0;
-            if (timeTaken < 5) speedMultiplier = 1.5;
-            const totalMultiplier = speedMultiplier * multiplier;
-            const pointsEarned = Math.round(points * totalMultiplier);
-            setEarnedPoints(pointsEarned);
-            submitAnswer(true, timeTaken);
+            const breakdown = submitAnswer(true, timeTaken);
+            setEarnedPoints(breakdown.totalPoints);
             setTimeLeft((prev) => prev + 3);
         } else {
+            setEarnedPoints(0);
             submitAnswer(false, timeTaken);
         }
 
