@@ -136,16 +136,21 @@ export default function Home() {
             category={currentQuiz.questions[currentQuiz.currentIndex].category || ''}
             timeLimit={calculateTimeLimit(currentQuiz.total)}
           />
-          <LiquidButton onClick={() => {
-            const store = useGameStore.getState();
-            if (store.currentQuiz && store.currentQuiz.currentIndex < store.currentQuiz.total - 1) {
-              useGameStore.getState().nextQuizQuestion();
-            } else {
-              endQuiz();
-            }
-          }} variant="secondary">
-            التالي
-          </LiquidButton>
+          <div className="flex gap-3">
+            <LiquidButton onClick={() => {
+              const store = useGameStore.getState();
+              if (store.currentQuiz && store.currentQuiz.currentIndex < store.currentQuiz.total - 1) {
+                useGameStore.getState().nextQuizQuestion();
+              } else {
+                endQuiz();
+              }
+            }} variant="secondary" className="flex-1">
+              التالي
+            </LiquidButton>
+            <LiquidButton onClick={() => endQuiz()} variant="danger" className="flex-1">
+              إنهاء الاختبار
+            </LiquidButton>
+          </div>
         </div>
       ) : (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10">
