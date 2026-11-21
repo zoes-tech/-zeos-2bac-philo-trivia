@@ -25,6 +25,9 @@ export function QuizResultCard({ result, totalPoints, onClose, onRetry }: QuizRe
   const mastery = getMasteryLabel(result.accuracy);
   const mistakes = result.reviewItems.filter((item) => !item.isCorrect);
   const skipped = result.reviewItems.filter((item) => item.selectedAnswer === null);
+  const answered = result.reviewItems.length;
+  const unanswered = Math.max(0, result.total - answered);
+  const finishedAll = answered >= result.total;
 
   return (
     <GlassCard className="border-cyan-500/30 bg-cyan-500/5">
@@ -73,53 +76,71 @@ export function QuizResultCard({ result, totalPoints, onClose, onRetry }: QuizRe
               مراجعة الإجابات
             </h3>
             <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-gray-300">
-              {mistakes.length} خطأ | {skipped.length} متجاوز
+              {mistakes.length} خطأ | {skipped.length} متجاوز |{" "}
+              {unanswered} دون إجابة
             </span>
           </div>
 
-          {result.reviewItems.length === 0 ? (
+          {answered === 0 ? (
             <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-3 text-sm text-yellow-100">
               لم يتم تسجيل أي إجابات. يرجى المحاولة مرة أخرى.
             </div>
-          ) : mistakes.length === 0 && skipped.length === 0 ? (
+          ) : result.correct === result.total ? (
             <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-100">
               ممتاز! أجبت على جميع الأسئلة بشكل صحيح.
             </div>
           ) : (
-            <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
-              {result.reviewItems.map((item, index) => (
-                <div key={`${item.questionId}-${index}`} className={cn(
-                  "rounded-xl border p-3",
-                  item.isCorrect
-                    ? "border-green-500/20 bg-green-500/10"
-                    : item.selectedAnswer === null
-                      ? "border-yellow-500/20 bg-yellow-500/10"
-                      : "border-red-500/20 bg-red-500/10"
-                )}>
-                  <div className="mb-2 text-xs text-cyan-200/80">{item.category || "بدون تصنيف"}</div>
-                  <p className="mb-3 text-sm font-semibold leading-relaxed text-white">{item.question}</p>
-                  <div className="space-y-2 text-xs">
-                    {item.selectedAnswer === null ? (
-                      <div className="rounded-lg bg-yellow-950/40 p-2 text-yellow-100">
-                        لم تختر إجابة (تم تجاوز السؤال)
-                      </div>
-                    ) : (
-                      <div className={cn(
-                        "rounded-lg p-2",
-                        item.isCorrect ? "bg-green-950/40 text-green-100" : "bg-red-950/40 text-red-100"
-                      )}>
-                        إجابتك: <span className="font-bold">{item.selectedAnswer}</span>
-                      </div>
-                    )}
-                    {!item.isCorrect && (
-                      <div className="rounded-lg bg-green-950/40 p-2 text-green-100">
-                        الإجابة الصحيحة: <span className="font-bold">{item.correctAnswer}</span>
-                      </div>
-                    )}
-                  </div>
+            <>
+              {unanswered > 0 && (
+                <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-sm text-cyan-100">
+                  أجبت على {answered} من {result.total} سؤالاً. أكمل بقية
+                  الأسئلة أو أعد المحاولة لتحسين نتيجتك.
                 </div>
-              ))}
-            </div>
+              )}
+
+              {finishedAll && mistakes.length === 0 && skipped.length === 0 && (
+                <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-100">
+                  لا توجد أخطاء لمراجعتها.
+                </div>
+              )}
+
+              {result.reviewItems.length > 0 && (
+                <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+                  {result.reviewItems.map((item, index) => (
+                    <div key={`${item.questionId}-${index}`} className={cn(
+                      "rounded-xl border p-3",
+                      item.isCorrect
+                        ? "border-green-500/20 bg-green-500/10"
+                        : item.selectedAnswer === null
+                          ? "border-yellow-500/20 bg-yellow-500/10"
+                          : "border-red-500/20 bg-red-500/10"
+                    )}>
+                      <div className="mb-2 text-xs text-cyan-200/80">{item.category || "بدون تصنيف"}</div>
+                      <p className="mb-3 text-sm font-semibold leading-relaxed text-white">{item.question}</p>
+                      <div className="space-y-2 text-xs">
+                        {item.selectedAnswer === null ? (
+                          <div className="rounded-lg bg-yellow-950/40 p-2 text-yellow-100">
+                            لم تختر إجابة (تم تجاوز السؤال)
+                          </div>
+                        ) : (
+                          <div className={cn(
+                            "rounded-lg p-2",
+                            item.isCorrect ? "bg-green-950/40 text-green-100" : "bg-red-950/40 text-red-100"
+                          )}>
+                            إجابتك: <span className="font-bold">{item.selectedAnswer}</span>
+                          </div>
+                        )}
+                        {!item.isCorrect && (
+                          <div className="rounded-lg bg-green-950/40 p-2 text-green-100">
+                            الإجابة الصحيحة: <span className="font-bold">{item.correctAnswer}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 

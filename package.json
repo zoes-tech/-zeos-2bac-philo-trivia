@@ -1,23 +1,24 @@
 {
-  "name": "zeos-2bac-trivia",
-  "version": "1.0.0",
-  "description": "Interactive philosophy trivia for Moroccan 2nd Baccalaureate students",
-  "author": "Zeos Team",
+  "name": "zoes-philo",
+  "version": "2.0.0",
+  "description": "Free, open-source philosophy quiz for Moroccan Baccalaureate students",
+  "author": "Zoes Tech",
   "license": "MIT",
   "private": true,
   "engines": {
-    "node": ">=18"
+    "node": ">=20.9.0"
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "build": "next build && node scripts/generate-seo.mjs",
+    "preview": "npx --yes serve out",
+    "start": "npx --yes serve out",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "deploy": "wrangler pages deploy out --project-name zoes-philo",
+    "og": "node scripts/generate-og.mjs"
   },
   "dependencies": {
-    "@ducanh2912/next-pwa": "^10.2.9",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.34.1",
     "lucide-react": "^0.574.0",
@@ -28,13 +29,14 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/postcss": "^4.3.5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4.3.5",
     "typescript": "^5"
   }
 }

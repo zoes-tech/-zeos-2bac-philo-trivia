@@ -60,3 +60,31 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(255, 255, 255, 0.3);
   box-shadow: 0 0 15px var(--color-brand-cyan);
 }
+
+/* Decorative background orbs (pure CSS, no JS) */
+@keyframes orb-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(100px, -50px) scale(1.2); }
+}
+
+@keyframes orb-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-70px, 100px) scale(1.5); }
+}
+
+@keyframes orb-drift-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(50px, 50px) scale(1.3); }
+}
+
+.orb-a { animation: orb-drift-a 20s ease-in-out infinite; }
+.orb-b { animation: orb-drift-b 25s ease-in-out infinite 2s; }
+.orb-c { animation: orb-drift-c 18s ease-in-out infinite 5s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-a,
+  .orb-b,
+  .orb-c {
+    animation: none;
+  }
+}
