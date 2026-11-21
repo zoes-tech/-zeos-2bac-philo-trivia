@@ -1,4 +1,5 @@
 import { GameIsland } from "@/components/game/GameIsland";
+import { DashboardIsland } from "@/components/game/DashboardIsland";
 import { AppProviders } from "@/components/site/AppProviders";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
@@ -7,7 +8,6 @@ import {
   FeatureGrid,
   Hero,
   HowItWorks,
-  StatsGrid,
 } from "@/components/site/LandingSections";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -36,8 +36,8 @@ export default function HomePage() {
       <SiteHeader locale="ar" />
 
       <main id="main">
-        <Hero content={content} playHref="#play" />
-        <StatsGrid content={content} />
+        <Hero content={content} playHref="#dashboard" />
+        <DashboardIsland />
         <AppProviders>
           <GameIsland />
         </AppProviders>

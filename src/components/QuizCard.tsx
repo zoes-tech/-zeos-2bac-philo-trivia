@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Flame, Zap, Trophy } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, CheckCircle2, Flame, Trophy, X, Zap } from "lucide-react";
 import { cn, shuffleArray } from "@/lib/utils";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { GlassCard } from "@/components/ui/GlassCard";
-import type { Question } from "@/types";
+import type { QuizMode, QuizQuestion } from "@/types";
 import {
   useScoring,
   useScoreAnimation,
@@ -15,7 +15,9 @@ import {
 import type { QuizReviewItem } from "@/store/useStore";
 
 interface QuizCardProps {
-  question: Question;
+  question: QuizQuestion;
+  moduleId?: string;
+  mode?: QuizMode;
   onAnswer: (answer: QuizReviewItem) => void;
   /** Called once, ~1.4s after an answer, so the parent can advance. */
   onNext?: () => void;
@@ -33,6 +35,8 @@ interface QuizCardProps {
  */
 export function QuizCard({
   question,
+  moduleId,
+  mode = "timed",
   onAnswer,
   onNext,
   currentIndex,
@@ -41,6 +45,9 @@ export function QuizCard({
   category,
   timeLimit = 20,
 }: QuizCardProps) {
+  const timed = mode === "timed";
+  const resolvedModuleId = moduleId ?? question.moduleId;
+
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
@@ -51,13 +58,6 @@ export function QuizCard({
   const deadlineRef = useRef(0);
   const answeredRef = useRef(false);
   const nextTimeoutRef = useRef<number | null>(null);
-
-  // Refs are initialised in an effect: Date.now() is impure and must not run
-  // during render (the component remounts per question via `key`).
-  useEffect(() => {
-    questionStartRef.current = Date.now();
-    deadlineRef.current = Date.now() + timeLimit * 1000;
-  }, [timeLimit]);
 
   const shuffledOptions = useMemo(
     () => shuffleArray(question.options),
@@ -76,8 +76,17 @@ export function QuizCard({
   const displayScore = useScoreAnimation(score || 0);
   const { displayStreak, isPopping } = useStreakAnimation(currentStreak);
 
+  // Refs are initialised in an effect: Date.now() is impure and must not run
+  // during render (the component remounts per question via `key`).
+  useEffect(() => {
+    if (!timed) return;
+    questionStartRef.current = Date.now();
+    deadlineRef.current = Date.now() + timeLimit * 1000;
+  }, [timed, timeLimit]);
+
   const buildReviewItem = useCallback(
     (selectedIndex: number | null, isCorrect: boolean): QuizReviewItem => ({
+      moduleId: resolvedModuleId,
       questionId: question.id,
       question: question.question,
       category: question.category,
@@ -86,7 +95,7 @@ export function QuizCard({
       correctAnswer: shuffledOptions[shuffledCorrectIndex],
       isCorrect,
     }),
-    [question, shuffledCorrectIndex, shuffledOptions],
+    [resolvedModuleId, question, shuffledCorrectIndex, shuffledOptions],
   );
 
   const scheduleNext = useCallback(() => {
@@ -104,7 +113,7 @@ export function QuizCard({
   // Countdown. The timeout handling lives in the interval callback (an
   // external event), not in the effect body.
   useEffect(() => {
-    if (isSubmitted) return;
+    if (!timed || isSubmitted) return;
 
     let timerId = 0;
     const tick = () => {
@@ -127,6 +136,7 @@ export function QuizCard({
     timerId = window.setInterval(tick, 250);
     return () => window.clearInterval(timerId);
   }, [
+    timed,
     isSubmitted,
     selectedOption,
     submitAnswer,
@@ -136,24 +146,31 @@ export function QuizCard({
     scheduleNext,
   ]);
 
-  const handleSelect = (index: number) => {
-    if (isSubmitted) return;
-    setSelectedOption(index);
-  };
+  const handleSelect = useCallback(
+    (index: number) => {
+      if (isSubmitted) return;
+      setSelectedOption(index);
+    },
+    [isSubmitted],
+  );
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (isSubmitted || selectedOption === null) return;
 
     answeredRef.current = true;
-    const timeTaken = (Date.now() - questionStartRef.current) / 1000;
+    const timeTaken = timed
+      ? (Date.now() - questionStartRef.current) / 1000
+      : undefined;
     const isCorrect = selectedOption === shuffledCorrectIndex;
 
     if (isCorrect) {
       const breakdown = submitAnswer(true, timeTaken);
       setEarnedPoints(breakdown.totalPoints);
-      // Reward fast, correct answers with extra time for the next question.
-      deadlineRef.current += 3000;
-      setTimeLeft((prev) => prev + 3);
+      if (timed) {
+        // Reward fast, correct answers with extra time for the next question.
+        deadlineRef.current += 3000;
+        setTimeLeft((prev) => prev + 3);
+      }
     } else {
       submitAnswer(false, timeTaken);
     }
@@ -162,10 +179,70 @@ export function QuizCard({
     setIsSubmitted(true);
     onAnswer(buildReviewItem(selectedOption, isCorrect));
     scheduleNext();
+  }, [
+    isSubmitted,
+    selectedOption,
+    shuffledCorrectIndex,
+    timed,
+    submitAnswer,
+    onAnswer,
+    buildReviewItem,
+    scheduleNext,
+  ]);
+
+  const handleSkip = () => {
+    if (isSubmitted || answeredRef.current) return;
+
+    answeredRef.current = true;
+    const timeTaken = timed
+      ? (Date.now() - questionStartRef.current) / 1000
+      : undefined;
+    submitAnswer(false, timeTaken);
+    setIsSubmitted(true);
+    setTimedOut(false);
+    onAnswer(buildReviewItem(null, false));
+    scheduleNext();
   };
+
+  // Keyboard shortcuts: 1-4 selects, Enter confirms. Refs keep the listener
+  // from re-subscribing on every render.
+  const actionRef = useRef({ select: handleSelect, submit: handleSubmit });
+
+  useEffect(() => {
+    actionRef.current = { select: handleSelect, submit: handleSubmit };
+  }, [handleSelect, handleSubmit]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isSubmitted) return;
+
+      if (event.key >= "1" && event.key <= "4") {
+        const index = Number(event.key) - 1;
+        if (index < shuffledOptions.length) actionRef.current.select(index);
+        return;
+      }
+
+      if (event.key === "Enter") {
+        const target = event.target as HTMLElement | null;
+        if (target && (target.tagName === "BUTTON" || target.tagName === "A")) {
+          return;
+        }
+        actionRef.current.submit();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isSubmitted, shuffledOptions.length]);
 
   const timerPercent = Math.min(100, Math.round((timeLeft / timeLimit) * 100));
   const isCorrectAnswer = selectedOption === shuffledCorrectIndex;
+  const progress =
+    currentIndex !== undefined && total
+      ? Math.round(((currentIndex + 1) / total) * 100)
+      : null;
 
   return (
     <GlassCard
@@ -173,6 +250,22 @@ export function QuizCard({
       hoverEffect={false}
     >
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        {progress !== null && (
+          <div
+            role="progressbar"
+            aria-label="تقدم الاختبار"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+            className="mb-4 h-1.5 overflow-hidden rounded-full bg-white/10"
+          >
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
+
         {currentIndex !== undefined && total !== undefined && (
           <p className="mb-4 text-center text-sm text-gray-400">
             س {currentIndex + 1} / {total} | {category} | الإجابات الصحيحة:{" "}
@@ -221,45 +314,52 @@ export function QuizCard({
           </div>
         </div>
 
-        <div className="mb-4">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs text-gray-400">الوقت المتبقي</span>
-            <span
-              className={cn(
-                "text-sm font-bold",
-                timeLeft <= 3
-                  ? "text-red-400 animate-pulse"
-                  : timeLeft <= 5
-                    ? "text-yellow-400"
-                    : "text-cyan-400",
-              )}
+        {timed ? (
+          <div className="mb-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs text-gray-400">الوقت المتبقي</span>
+              <span
+                className={cn(
+                  "text-sm font-bold",
+                  timeLeft <= 3
+                    ? "text-red-400 animate-pulse"
+                    : timeLeft <= 5
+                      ? "text-yellow-400"
+                      : "text-cyan-400",
+                )}
+              >
+                {timeLeft}ث
+              </span>
+            </div>
+            <div
+              role="progressbar"
+              aria-label="الوقت المتبقي"
+              aria-valuemin={0}
+              aria-valuemax={Math.max(timeLimit, timeLeft)}
+              aria-valuenow={timeLeft}
+              className="h-2 overflow-hidden rounded-full bg-gray-700"
             >
-              {timeLeft}ث
-            </span>
+              <motion.div
+                initial={{ width: "100%" }}
+                animate={{ width: `${timerPercent}%` }}
+                transition={{ duration: 0.3 }}
+                className={cn(
+                  "h-full rounded-full",
+                  timeLeft <= 3
+                    ? "bg-gradient-to-r from-red-500 to-red-600"
+                    : timeLeft <= 5
+                      ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+                      : "bg-gradient-to-r from-cyan-500 to-blue-500",
+                )}
+              />
+            </div>
           </div>
-          <div
-            role="progressbar"
-            aria-label="الوقت المتبقي"
-            aria-valuemin={0}
-            aria-valuemax={Math.max(timeLimit, timeLeft)}
-            aria-valuenow={timeLeft}
-            className="h-2 overflow-hidden rounded-full bg-gray-700"
-          >
-            <motion.div
-              initial={{ width: "100%" }}
-              animate={{ width: `${timerPercent}%` }}
-              transition={{ duration: 0.3 }}
-              className={cn(
-                "h-full rounded-full",
-                timeLeft <= 3
-                  ? "bg-gradient-to-r from-red-500 to-red-600"
-                  : timeLeft <= 5
-                    ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                    : "bg-gradient-to-r from-cyan-500 to-blue-500",
-              )}
-            />
+        ) : (
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200">
+            <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
+            وضع الدراسة: بدون مؤقت وبدون مكافأة سرعة
           </div>
-        </div>
+        )}
 
         <AnimatePresence>
           {isGodMode && (
@@ -347,12 +447,12 @@ export function QuizCard({
             : ""}
         </p>
 
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8 flex gap-2">
           <LiquidButton
             onClick={handleSubmit}
             disabled={selectedOption === null || isSubmitted}
             className={cn(
-              "w-full",
+              "flex-1",
               (selectedOption === null || isSubmitted) &&
                 "cursor-not-allowed opacity-50 grayscale",
             )}
@@ -360,7 +460,20 @@ export function QuizCard({
           >
             {isSubmitted ? "النتيجة..." : "تأكيد الإجابة"}
           </LiquidButton>
+
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={isSubmitted}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-zinc-300 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            تخطي
+          </button>
         </div>
+
+        <p className="mt-3 hidden text-center text-[10px] text-zinc-600 sm:block">
+          اختصارات: 1–4 للاختيار، Enter للتأكيد
+        </p>
 
         <AnimatePresence>
           {isSubmitted && earnedPoints > 0 && (

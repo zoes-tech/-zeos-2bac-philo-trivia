@@ -1,21 +1,27 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { calculateAnswerScore, calculateStreakMultiplier, type AnswerScoreBreakdown } from '@/lib/scoring';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  calculateAnswerScore,
+  calculateStreakMultiplier,
+  type AnswerScoreBreakdown,
+} from "@/lib/scoring";
 
 interface ScoringState {
   score: number;
   currentStreak: number;
-  highestStreak: number;
-  dailyStreak: number;
-  lastPlayedDate: string | null;
-  rank: string;
-  rankEmoji: string;
   multiplier: number;
   isGodMode: boolean;
-  totalTimeBonus: number;
-  totalAnswers: number;
-  correctAnswers: number;
+  rank: string;
+  rankEmoji: string;
   lastAnswer: AnswerScoreBreakdown | null;
 }
 
@@ -27,13 +33,13 @@ interface ScoringContextType extends ScoringState {
 
 const ScoringContext = createContext<ScoringContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'zeos-stats';
+const STORAGE_KEY = "zeos-stats";
 
 const RANKS = [
-  { minScore: 0, maxScore: 1000, rank: 'متأمل مبتدئ', emoji: '📜' },
-  { minScore: 1001, maxScore: 5000, rank: 'تلميذ سقراط', emoji: '🦉' },
-  { minScore: 5001, maxScore: 20000, rank: 'فيلسوف ناشئ', emoji: '🧠' },
-  { minScore: 20001, maxScore: Infinity, rank: 'حكيم الأطلس', emoji: '💎' },
+  { minScore: 0, maxScore: 1000, rank: "متأمل مبتدئ", emoji: "📜" },
+  { minScore: 1001, maxScore: 5000, rank: "تلميذ سقراط", emoji: "🦉" },
+  { minScore: 5001, maxScore: 20000, rank: "فيلسوف ناشئ", emoji: "🧠" },
+  { minScore: 20001, maxScore: Infinity, rank: "حكيم الأطلس", emoji: "💎" },
 ];
 
 const getRankInfo = (score: number): { rank: string; emoji: string } => {
@@ -45,169 +51,101 @@ const getRankInfo = (score: number): { rank: string; emoji: string } => {
   return RANKS[0];
 };
 
-const checkDailyStreak = (lastPlayedDate: string | null): { dailyStreak: number; shouldReset: boolean } => {
-  if (!lastPlayedDate) return { dailyStreak: 0, shouldReset: false };
-
-  const lastDate = new Date(lastPlayedDate);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const isToday = lastDate.toDateString() === today.toDateString();
-  const isYesterday = lastDate.toDateString() === yesterday.toDateString();
-
-  if (isToday) return { dailyStreak: 0, shouldReset: false };
-  if (isYesterday) return { dailyStreak: 0, shouldReset: false };
-
-  return { dailyStreak: 0, shouldReset: true };
+const INITIAL_STATE: ScoringState = {
+  score: 0,
+  currentStreak: 0,
+  multiplier: 1,
+  isGodMode: false,
+  rank: "متأمل مبتدئ",
+  rankEmoji: "📜",
+  lastAnswer: null,
 };
 
-interface ScoringProviderProps {
-  children: React.ReactNode;
-}
-
-export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) => {
+/**
+ * Points, answer streaks and rank. Daily activity lives in the game store
+ * (`dailyStreak`), so this provider only deals with the current session.
+ */
+export const ScoringProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [state, setState] = useState<ScoringState>(() => {
-    if (typeof window === 'undefined') {
-      return {
-        score: 0,
-        currentStreak: 0,
-        highestStreak: 0,
-        dailyStreak: 0,
-        lastPlayedDate: null,
-        rank: 'متأمل مبتدئ',
-        rankEmoji: '📜',
-        multiplier: 1.0,
-        isGodMode: false,
-        totalTimeBonus: 0,
-        totalAnswers: 0,
-        correctAnswers: 0,
-        lastAnswer: null,
-      };
-    }
+    if (typeof window === "undefined") return INITIAL_STATE;
 
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const { shouldReset } = checkDailyStreak(parsed.lastPlayedDate);
-        const rankInfo = getRankInfo(parsed.score);
-        const multiplier = calculateStreakMultiplier(parsed.currentStreak);
+      if (!stored) return INITIAL_STATE;
 
-        return {
-          ...parsed,
-          dailyStreak: shouldReset ? 0 : parsed.dailyStreak,
-          rank: rankInfo.rank,
-          rankEmoji: rankInfo.emoji,
-          multiplier,
-          isGodMode: parsed.currentStreak >= 10,
-          totalTimeBonus: parsed.totalTimeBonus || 0,
-          totalAnswers: parsed.totalAnswers || 0,
-          correctAnswers: parsed.correctAnswers || 0,
-          lastAnswer: null,
-        };
-      }
-    } catch (error) {
-      console.error('Failed to load scoring state:', error);
+      const parsed = JSON.parse(stored) as Partial<ScoringState>;
+      const score = typeof parsed.score === "number" ? parsed.score : 0;
+      const currentStreak =
+        typeof parsed.currentStreak === "number" ? parsed.currentStreak : 0;
+      const rankInfo = getRankInfo(score);
+
+      return {
+        score,
+        currentStreak,
+        multiplier: calculateStreakMultiplier(currentStreak),
+        isGodMode: currentStreak >= 10,
+        rank: rankInfo.rank,
+        rankEmoji: rankInfo.emoji,
+        lastAnswer: null,
+      };
+    } catch {
+      return INITIAL_STATE;
     }
-
-    return {
-      score: 0,
-      currentStreak: 0,
-      highestStreak: 0,
-      dailyStreak: 0,
-      lastPlayedDate: null,
-      rank: 'متأمل مبتدئ',
-      rankEmoji: '📜',
-      multiplier: 1.0,
-      isGodMode: false,
-      totalTimeBonus: 0,
-      totalAnswers: 0,
-      correctAnswers: 0,
-      lastAnswer: null,
-    };
   });
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (error) {
-      console.error('Failed to save scoring state:', error);
+    } catch {
+      // Storage can be full or blocked; scoring still works in memory.
     }
   }, [state]);
 
-  const submitAnswer = useCallback((isCorrect: boolean, timeTaken?: number) => {
-    const breakdown = calculateAnswerScore({ isCorrect, timeTaken, currentStreak: state.currentStreak });
+  const submitAnswer = useCallback(
+    (isCorrect: boolean, timeTaken?: number) => {
+      const breakdown = calculateAnswerScore({
+        isCorrect,
+        timeTaken,
+        currentStreak: state.currentStreak,
+      });
 
-    setState((prevState) => {
-      const today = new Date().toISOString();
-      const { shouldReset } = checkDailyStreak(prevState.lastPlayedDate);
-      const totalAnswers = prevState.totalAnswers + 1;
-      const correctAnswers = prevState.correctAnswers + (isCorrect ? 1 : 0);
+      setState((previous) => {
+        if (!isCorrect) {
+          const rankInfo = getRankInfo(previous.score);
+          return {
+            ...previous,
+            currentStreak: 0,
+            multiplier: 1,
+            isGodMode: false,
+            rank: rankInfo.rank,
+            rankEmoji: rankInfo.emoji,
+            lastAnswer: breakdown,
+          };
+        }
 
-      if (!isCorrect) {
-        const newDailyStreak = shouldReset ? 0 : prevState.dailyStreak;
-        const rankInfo = getRankInfo(prevState.score);
+        const newScore = previous.score + breakdown.totalPoints;
+        const rankInfo = getRankInfo(newScore);
 
         return {
-          ...prevState,
-          currentStreak: 0,
-          dailyStreak: newDailyStreak,
-          lastPlayedDate: today,
-          multiplier: 1,
-          isGodMode: false,
+          ...previous,
+          score: newScore,
+          currentStreak: breakdown.nextStreak,
+          multiplier: breakdown.multiplier,
+          isGodMode: breakdown.nextStreak >= 10,
           rank: rankInfo.rank,
           rankEmoji: rankInfo.emoji,
-          totalAnswers,
-          correctAnswers,
           lastAnswer: breakdown,
         };
-      }
+      });
 
-      const newCurrentStreak = breakdown.nextStreak;
-      const newHighestStreak = Math.max(prevState.highestStreak, newCurrentStreak);
-      const newScore = prevState.score + breakdown.totalPoints;
-      const newDailyStreak = shouldReset ? 1 : prevState.dailyStreak + 1;
-      const newTotalTimeBonus = prevState.totalTimeBonus + breakdown.speedBonus;
-      const rankInfo = getRankInfo(newScore);
+      return breakdown;
+    },
+    [state.currentStreak],
+  );
 
-      return {
-        ...prevState,
-        score: newScore,
-        currentStreak: newCurrentStreak,
-        highestStreak: newHighestStreak,
-        dailyStreak: newDailyStreak,
-        lastPlayedDate: today,
-        multiplier: breakdown.multiplier,
-        isGodMode: newCurrentStreak >= 10,
-        rank: rankInfo.rank,
-        rankEmoji: rankInfo.emoji,
-        totalTimeBonus: newTotalTimeBonus,
-        totalAnswers,
-        correctAnswers,
-        lastAnswer: breakdown,
-      };
-    });
-    return breakdown;
-  }, [state.currentStreak]);
-
-  const resetScore = useCallback(() => {
-    setState({
-      score: 0,
-      currentStreak: 0,
-      highestStreak: 0,
-      dailyStreak: 0,
-      lastPlayedDate: null,
-      rank: 'متأمل مبتدئ',
-      rankEmoji: '📜',
-      multiplier: 1.0,
-      isGodMode: false,
-      totalTimeBonus: 0,
-      totalAnswers: 0,
-      correctAnswers: 0,
-      lastAnswer: null,
-    });
-  }, []);
+  const resetScore = useCallback(() => setState(INITIAL_STATE), []);
 
   const contextValue = useMemo<ScoringContextType>(
     () => ({
@@ -216,21 +154,25 @@ export const ScoringProvider: React.FC<ScoringProviderProps> = ({ children }) =>
       resetScore,
       getRankInfo,
     }),
-    [state, submitAnswer, resetScore]
+    [state, submitAnswer, resetScore],
   );
 
-  return <ScoringContext.Provider value={contextValue}>{children}</ScoringContext.Provider>;
+  return (
+    <ScoringContext.Provider value={contextValue}>
+      {children}
+    </ScoringContext.Provider>
+  );
 };
 
 export const useScoring = (): ScoringContextType => {
   const context = useContext(ScoringContext);
   if (context === undefined) {
-    throw new Error('useScoring must be used within a ScoringProvider');
+    throw new Error("useScoring must be used within a ScoringProvider");
   }
   return context;
 };
 
-export const useScoreAnimation = (targetScore: number, duration: number = 1000) => {
+export const useScoreAnimation = (targetScore: number, duration = 1000) => {
   const [displayScore, setDisplayScore] = useState(0);
   const displayScoreRef = useRef(0);
 
@@ -247,9 +189,10 @@ export const useScoreAnimation = (targetScore: number, duration: number = 1000) 
       if (startTime === null) startTime = currentTime;
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setDisplayScore(Math.round(startScore + (targetScore - startScore) * easeOutQuart));
+      setDisplayScore(
+        Math.round(startScore + (targetScore - startScore) * easeOutQuart),
+      );
 
       if (progress < 1) {
         frameId = requestAnimationFrame(animate);
@@ -296,7 +239,9 @@ export const useStreakAnimation = (targetStreak: number) => {
         return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
       };
 
-      setDisplayStreak(Math.round(startStreak + (targetStreak - startStreak) * easeOutBack(progress)));
+      setDisplayStreak(
+        Math.round(startStreak + (targetStreak - startStreak) * easeOutBack(progress)),
+      );
 
       if (progress < 1) {
         frameId = requestAnimationFrame(animate);

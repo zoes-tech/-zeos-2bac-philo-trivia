@@ -12,17 +12,24 @@ A free, open-source philosophy quiz for Moroccan Baccalaureate students.
 
 Most philosophy revision material for the Moroccan bac is either paid, locked
 inside a school platform, or buried in PDFs. This project is a small, fast,
-installable quiz that works offline and collects no personal data. It is also
-the public front door for Zoes Tech's learning tools.
+installable quiz that works offline and collects no personal data. It stays
+free, open source and free of product pitches.
 
 ## Features
 
 - **349 questions** across 7 themes and 3 levels (tronc commun, 1re and 2e bac).
 - **7 indexable theme pages** (`/2bac/human-condition/`, …) with an overview,
   question distribution, worked examples and links to the quiz.
+- **Daily challenge** (10 deterministic questions per day) with a real daily
+  streak, so there is a reason to come back tomorrow.
+- **Mistake bank**: every wrong answer is stored locally and can be replayed as
+  its own quiz; correct answers remove it.
+- **Resume**: an interrupted quiz is persisted and restored on the next visit.
+- **Study mode**: a no-timer, no-speed-bonus mode for calm revision.
 - **Instant feedback** with a mistake-review card at the end of every quiz.
 - **Gamification**: base points, speed bonus, streak multipliers up to ×2.5.
 - **Offline-first**: progressive web app with a hand-written service worker.
+- **Share results** with the Web Share API (falls back to copying a link).
 - **Private by design**: no accounts, no server, no analytics cookies; progress
   lives in `localStorage`.
 - **Trilingual web presence**: the app is Arabic; `/fr/` and `/en/` are
@@ -132,7 +139,7 @@ change plus a rebuild — see [`docs/DEPLOY-CLOUDFLARE.md`](docs/DEPLOY-CLOUDFLA
 - [Architecture](docs/ARCHITECTURE.md)
 - [Deploying to Cloudflare Pages](docs/DEPLOY-CLOUDFLARE.md)
 - [SEO and GEO](docs/SEO-GEO.md)
-- [Roadmap: from quiz to portal](docs/ROADMAP.md)
+- [Roadmap: retention and learning first](docs/ROADMAP.md)
 
 ## Privacy
 

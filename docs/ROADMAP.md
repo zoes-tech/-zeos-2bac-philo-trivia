@@ -1,14 +1,14 @@
-# Roadmap: from quiz to portal
+# Roadmap: retention and learning first
 
-The current release is a clean, fast, free revision tool. The goal is to turn it
-into a **free acquisition and retention surface** for Zoes Tech's paid products
-in edtech, economics and fintech — without turning the student experience into an
-advert.
+The immediate goal is **not** to sell anything. It is to make the free revision
+tool good enough that students come back on their own: clear UX, honest
+progress, and a daily reason to return.
 
-Guiding rule: every phase must ship value to students on its own. Marketing is a
-consequence of being useful, not a layer on top.
+A product or "portal" layer is explicitly **out of scope until the retention and
+UX bar below is met**. There is no closed-source product to link to yet, and
+adding one before the free tool earns trust would be backwards.
 
-## Phase 1 — Foundation (done in this pass)
+## Phase 1 — Foundation (done)
 
 - [x] Remove dead code, duplicate data and stale docs.
 - [x] Static export, deployable to Cloudflare Pages at zero cost.
@@ -22,77 +22,93 @@ consequence of being useful, not a layer on top.
       progressbar, reduced motion, no forced zoom lock.
 - [x] Offline service worker without a 400 KB Workbox artifact.
 
-## Phase 2 — Indexable curriculum pages
-
-**Goal:** 7–10 pages that can rank for long-tail Arabic queries, and that AI
-engines can cite.
+## Phase 2 — Indexable curriculum pages (done)
 
 - [x] Generate `/{level}/{module}/` pages from the curriculum data.
-- [x] Each page: server-rendered overview, question distribution, four worked
-      examples, related modules and `Quiz` + `BreadcrumbList` JSON-LD.
+- [x] Each page: overview, question distribution, four worked examples, related
+      modules and `Quiz` + `BreadcrumbList` JSON-LD.
 - [x] Deep-link a theme into the quiz with `?module=<id>`.
 - [x] Internal links: home curriculum → theme pages → related themes.
-- [ ] Expand `concepts[].content` with reviewed, teacher-approved Arabic
-      summaries. This is the real content moat and the blocker for long-tail
-      rankings.
-- [ ] Measure: indexed pages, impressions per query cluster, average position.
+- [ ] Measure indexed pages, impressions and average position in Search Console.
 
-**Content work required:** ~2–3 paragraphs per module (7 modules). Drafts can be
-generated, but a philosophy teacher must review before publishing.
+## Phase 3 — Retention loops and UX (done in this pass)
 
-## Phase 3 — Lead capture and product showcase
+- [x] **Real daily streak** (one increment per local day, resets after a gap).
+- [x] **Daily challenge**: ten deterministic questions per day, drawn from all
+      three levels, identical for every student.
+- [x] **Mistake bank**: every wrong answer is stored and can be replayed as a
+      quiz; a correct answer removes it.
+- [x] **Resume**: an interrupted quiz survives a reload.
+- [x] **Study mode**: no timer and no speed bonus, for calm revision.
+- [x] **Dashboard** above the quiz: daily challenge, mistake review, resume and
+      personal numbers.
+- [x] **Skip** an individual question; **confirm** before ending a quiz.
+- [x] **Keyboard shortcuts** (1–4, Enter) on desktop.
+- [x] **Share result** via the Web Share API, linking back to the module page.
+- [x] Client providers mounted only around the islands; the marketing page
+      stays at ~170 KB gzip initial JS.
 
-**Goal:** convert free users into an owned audience, and give the paid products a
-public surface.
+## Phase 4 — Learning quality (next)
 
-- [ ] A `/products/` section describing each Zoes Tech product: what it does,
-      who it is for, free vs paid, and a clear CTA.
-- [ ] One low-friction capture: "receive a weekly 10-question quiz" by email or
-      WhatsApp. Requires a provider (Resend, Buttondown, MailerLite, or a
-      Cloudflare Worker + D1 table). Keep it single-field and explicit.
-- [ ] Shareable result cards (score + module + link), using the Web Share API.
-      This is the cheapest organic loop.
-- [ ] UTM convention for every outbound product link.
-- [ ] Privacy page and consent copy in Arabic, French and English.
+Retention without learning is a game; learning without retention is a PDF. This
+phase is about making the quiz teach, not just score.
 
-**Do not** gate the quiz, add interstitials, or sell student data.
+- [ ] **Answer explanations.** Add an optional `explanation` field to questions
+      and show it after a wrong answer. Even 30–50 reviewed explanations on the
+      most-missed questions would be a real improvement.
+- [ ] **Teacher-reviewed summaries** for the seven themes (`concepts[].content`).
+      This is also the content moat for SEO and AI citations.
+- [ ] **Adaptive review ordering**: prioritise questions missed more than once.
+- [ ] **First-visit onboarding**: one screen, "what this is", recommended start,
+      and a single primary action. No carousel.
+- [ ] **Install prompt**: offer "add to home screen" after the second visit.
+- [ ] **Session summary**: weakest concept of the session + one next action.
+- [ ] **Performance budget**: keep initial JS under 180 KB gzip and LCP under
+      2.5 s on a mid-range phone.
 
-## Phase 4 — Accounts, sync and streaks
+## Phase 5 — Accounts, sync and reminders (only if retention justifies it)
 
-**Goal:** retention. A student who returns weekly is worth more than one quiz
-completion.
+Gate: only start this if the 7-day return rate is above 15 % and the daily
+challenge completion rate is healthy. Otherwise the problem is the product, not
+the backend.
 
 - [ ] Optional account (magic link or passkey) — never required for the quiz.
 - [ ] Cloudflare D1 schema: `users`, `progress`, `quiz_attempts`, `streaks`.
 - [ ] Merge local progress into the account on first login.
-- [ ] Weekly streak reminders (email/WhatsApp) with a one-click return link.
-- [ ] Teacher view: class code, aggregate accuracy per theme (no personal data).
+- [ ] Weekly streak reminder (email/WhatsApp) with a one-click return link.
+- [ ] Teacher view: class code and aggregate accuracy per theme (no personal
+      data).
 
 **Architecture:** Pages Functions or a separate Worker. The static site stays
 static; only `/api/*` becomes dynamic.
 
-## Phase 5 — Funnel and decision-making
+## Phase 6 — Products and lead capture (deferred)
 
-- [ ] Product analytics with events: `quiz_started`, `quiz_completed`,
-      `mistake_review_opened`, `share_clicked`, `product_cta_clicked`.
-- [ ] Attribution: which content brings signups vs. which brings product clicks.
-- [ ] A simple weekly dashboard: new users, returning users, quiz completion,
-      capture rate, product click-through.
-- [ ] Kill criteria: if a channel does not produce qualified clicks in 8 weeks,
-      stop investing in it.
+Only after Phases 3–5 show that students return and learn. At that point, and
+only then, a showcase for Zoes Tech products can be added.
+
+- [ ] Product pages with real, verifiable descriptions (no placeholders).
+- [ ] One low-friction capture, clearly optional.
+- [ ] Shareable result cards with a branded image.
+- [ ] UTM convention and a privacy page in Arabic, French and English.
+
+**Do not** gate the quiz, add interstitials, or sell student data.
 
 ## Metrics that matter
 
 | Stage | Metric | Target to beat |
 | --- | --- | --- |
-| Acquisition | organic sessions/month | baseline after Phase 2 |
 | Activation | quiz completion rate | > 40 % of starts |
+| Habit | daily challenge completion | > 25 % of active days |
+| Habit | streak of 3+ days | > 20 % of returning users |
 | Retention | 7-day return rate | > 15 % |
+| Learning | mistake-review completion | > 30 % of opened reviews |
 | Referral | shares per 100 completions | > 3 |
-| Revenue intent | product CTA click-through | > 2 % of active users |
+| Performance | initial JS (home) | < 180 KB gzip |
 
 ## Explicit non-goals
 
+- No products or upsells before retention and UX targets are met.
 - No ads, no tracking pixels, no selling data.
 - No AI-generated philosophy claims published without teacher review.
 - No forced account creation.

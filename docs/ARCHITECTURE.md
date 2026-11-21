@@ -39,6 +39,10 @@ does a full page load, which is fine (and cacheable) for static content.
   stats, features, curriculum list, how-it-works, FAQ and footer as static HTML.
 - `GameShell` (`src/components/game/GameShell.tsx`) is the only client island
   on the home page. It owns the quiz screens, the level map and the result card.
+- `RetentionDashboard` is a second lazy island, above the quiz. It owns the
+  daily challenge, mistake review, resume card and streak. It is loaded with
+  `ssr: false` so the store and the question bank do not enter the initial
+  bundle; the server HTML reserves a skeleton with the same height.
 - Theme pages (`/[level]/[module]/`) are **fully server-rendered**. They reuse
   the JSON data to publish an overview, the per-concept question distribution,
   four worked examples and internal links. No client providers are mounted
@@ -59,20 +63,40 @@ instead of an empty client shell.
 
 Two stores, on purpose:
 
-1. **`ScoringProvider`** (`src/contexts/ScoringProvider.tsx`) — points, streaks,
-   rank, multipliers; persisted under `zeos-stats`.
-2. **`useGameStore`** (`src/store/useStore.ts`) — level, unlocked philosophers,
-   completed quizzes, current quiz and last result; persisted with Zustand
-   under `zeos-game-storage`.
+1. **`ScoringProvider`** (`src/contexts/ScoringProvider.tsx`) — points, answer
+   streak, rank and multiplier for the current session; persisted under
+   `zeos-stats`. It deliberately does **not** track days.
+2. **`useGameStore`** (`src/store/useStore.ts`) — everything durable: level,
+   unlocked philosophers, completed quizzes, **daily streak**, **mistake bank**,
+   **recent results**, **daily challenge result**, quiz mode and the
+   **in-progress quiz**. Persisted with Zustand under `zeos-game-storage`.
+
+Daily activity is owned by the game store because it must survive without the
+quiz being mounted. `answerQuiz` touches the day once (local date, not UTC) and
+increments `dailyStreak` only when the previous activity was yesterday.
 
 The old `progressStore.ts` duplicated both and was never imported; it was
 removed. Storage keys keep the historical `zeos-` prefix so returning users do
 not lose progress. Do not rename them without a migration.
 
-`QuizCard` is mounted with `key={moduleId-index}` so each question gets a fresh
-component. That replaced an effect-based reset and avoids cascading renders.
+`QuizCard` is mounted with `key={moduleId-index-mode}` so each question (and a
+mode switch) gets a fresh component. That replaced an effect-based reset and avoids cascading renders.
 Answering schedules exactly one advance (1.4 s), which fixes the old
 double-advance race between the page-level timeout and the manual "next" button.
+
+## Retention mechanics
+
+- **Daily challenge** (`src/lib/daily.ts`): a seeded PRNG builds the same ten
+  questions for everyone on a given local date, drawing round-robin from the
+  three levels. No server, no leaderboard, no coordination.
+- **Mistake bank**: keys are `moduleId:questionId` because question ids repeat
+  across modules. Wrong answers are added; correct answers remove the key.
+- **Resume**: `currentQuiz` is part of the persisted state, including the
+  question list, index and review items. Reloading restores it and shows a
+  "resumed" banner. The timer restarts for the current question.
+- **Study mode**: no countdown and no speed bonus; `quizMode` persists.
+- **Streak**: one increment per local day, regardless of how many quizzes were
+  played. Missing a day resets to 1 on the next activity.
 
 ## Static-export constraints
 
