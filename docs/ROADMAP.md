@@ -53,18 +53,22 @@ adding one before the free tool earns trust would be backwards.
 Retention without learning is a game; learning without retention is a PDF. This
 phase is about making the quiz teach, not just score.
 
-- [ ] **Answer explanations.** Add an optional `explanation` field to questions
-      and show it after a wrong answer. Even 30–50 reviewed explanations on the
-      most-missed questions would be a real improvement.
+- [x] **Concept feedback after a mistake**: wrong answers stay on screen with
+      the related concept and a link to the theme page.
+- [x] **Adaptive review ordering**: most-missed questions come first.
+- [x] **First-visit onboarding**: a dismissible three-line panel on the
+      dashboard, never repeated.
+- [x] **Session summary**: weakest concept of the session, with a link to the
+      theme page.
+- [ ] **Answer explanations.** Add an optional `explanation` field and show it
+      with the concept note. Requires teacher-reviewed content; do not mass
+      generate it.
 - [ ] **Teacher-reviewed summaries** for the seven themes (`concepts[].content`).
-      This is also the content moat for SEO and AI citations.
-- [ ] **Adaptive review ordering**: prioritise questions missed more than once.
-- [ ] **First-visit onboarding**: one screen, "what this is", recommended start,
-      and a single primary action. No carousel.
+      This is the content moat for SEO and AI citations, and the prerequisite
+      for real explanations.
 - [ ] **Install prompt**: offer "add to home screen" after the second visit.
-- [ ] **Session summary**: weakest concept of the session + one next action.
-- [ ] **Performance budget**: keep initial JS under 180 KB gzip and LCP under
-      2.5 s on a mid-range phone.
+- [ ] **Performance budget**: add a build check that fails above 180 KB gzip
+      initial JS, and measure LCP on a mid-range phone.
 
 ## Phase 5 — Accounts, sync and reminders (only if retention justifies it)
 

@@ -91,10 +91,17 @@ double-advance race between the page-level timeout and the manual "next" button.
   three levels. No server, no leaderboard, no coordination.
 - **Mistake bank**: keys are `moduleId:questionId` because question ids repeat
   across modules. Wrong answers are added; correct answers remove the key.
+  `mistakeCounts` tracks repetitions, and the review quiz opens with the
+  most-missed questions first.
 - **Resume**: `currentQuiz` is part of the persisted state, including the
   question list, index and review items. Reloading restores it and shows a
   "resumed" banner. The timer restarts for the current question.
 - **Study mode**: no countdown and no speed bonus; `quizMode` persists.
+- **Mistake pacing**: a correct answer auto-advances after 1.4 s; a wrong or
+  skipped answer stays on screen until "التالي". That is deliberate: the
+  correct answer and the related concept note need to be readable.
+- **Onboarding**: a dismissible panel for first-time users, stored under
+  `zoes-onboarding`. It is not a modal and never blocks the quiz.
 - **Streak**: one increment per local day, regardless of how many quizzes were
   played. Missing a day resets to 1 on the next activity.
 

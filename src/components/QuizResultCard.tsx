@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
   BookOpenCheck,
   RotateCcw,
   Share2,
@@ -13,6 +15,7 @@ import {
 import { GlassCard } from "@/components/ui/GlassCard";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { getMasteryLabel } from "@/lib/scoring";
+import { mistakeCountLabel, questionCountLabel } from "@/i18n/content";
 import { getModulePath } from "@/lib/curriculum";
 import { cn } from "@/lib/utils";
 import type { QuizResult } from "@/store/useStore";
@@ -43,6 +46,17 @@ export function QuizResultCard({
   const unanswered = Math.max(0, result.total - answered);
   const finishedAll = answered >= result.total;
   const title = result.moduleTitle ?? "اختبار الفلسفة";
+
+  const wrongByCategory = new Map<string, number>();
+  for (const item of mistakes) {
+    const key = item.category?.trim() || "عام";
+    wrongByCategory.set(key, (wrongByCategory.get(key) ?? 0) + 1);
+  }
+  const weakest = [...wrongByCategory.entries()].sort(
+    (a, b) => b[1] - a[1],
+  )[0];
+  const reviewPath =
+    result.kind === "module" ? getModulePath(result.moduleId) : undefined;
 
   const shareResult = async () => {
     const text = `حصلت على ${result.correct}/${result.total} في ${title} — رحلة الفيلسوف`;
@@ -115,6 +129,29 @@ export function QuizResultCard({
           </span>
         </div>
 
+        {weakest && result.correct < result.total && (
+          <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 p-3 text-right text-sm">
+            <p className="text-xs text-orange-200">
+              أكثر ما يحتاج مراجعة في هذه الجلسة
+            </p>
+            <p className="mt-1 font-bold text-white">
+              {weakest[0]}{" "}
+              <span className="text-xs font-normal text-orange-200">
+                ({mistakeCountLabel(weakest[1])})
+              </span>
+            </p>
+            {reviewPath && (
+              <Link
+                href={reviewPath}
+                className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-orange-200 transition-colors hover:text-white"
+              >
+                راجع المحور كاملاً
+                <ArrowLeft aria-hidden="true" className="h-3 w-3" />
+              </Link>
+            )}
+          </div>
+        )}
+
         <div className="space-y-3 text-right">
           <div className="flex items-center justify-between gap-3">
             <h3 className="flex items-center gap-2 text-base font-bold text-white">
@@ -122,8 +159,8 @@ export function QuizResultCard({
               مراجعة الإجابات
             </h3>
             <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-gray-300">
-              {mistakes.length} خطأ | {skipped.length} متجاوز | {unanswered} دون
-              إجابة
+              {mistakeCountLabel(mistakes.length)} | {skipped.length} متجاوز |{" "}
+              {unanswered} دون إجابة
             </span>
           </div>
 
@@ -139,8 +176,9 @@ export function QuizResultCard({
             <>
               {unanswered > 0 && (
                 <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-sm text-cyan-100">
-                  أجبت على {answered} من {result.total} سؤالاً. أكمل بقية
-                  الأسئلة أو أعد المحاولة لتحسين نتيجتك.
+                  أجبت على {answered} من {result.total}{" "}
+                  {questionCountLabel("ar", result.total)}. أكمل بقية الأسئلة
+                  أو أعد المحاولة لتحسين نتيجتك.
                 </div>
               )}
 

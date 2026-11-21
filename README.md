@@ -23,13 +23,18 @@ free, open source and free of product pitches.
 - **Daily challenge** (10 deterministic questions per day) with a real daily
   streak, so there is a reason to come back tomorrow.
 - **Mistake bank**: every wrong answer is stored locally and can be replayed as
-  its own quiz; correct answers remove it.
+  its own quiz; repeated misses are reviewed first, and correct answers remove
+  them.
+- **Concept feedback**: a wrong answer stays on screen with the related concept
+  and a link to the full theme page, instead of auto-advancing.
 - **Resume**: an interrupted quiz is persisted and restored on the next visit.
 - **Study mode**: a no-timer, no-speed-bonus mode for calm revision.
 - **Instant feedback** with a mistake-review card at the end of every quiz.
 - **Gamification**: base points, speed bonus, streak multipliers up to ×2.5.
 - **Offline-first**: progressive web app with a hand-written service worker.
-- **Share results** with the Web Share API (falls back to copying a link).
+- **Share results** with the Web Share API (falls back to copying a link), plus
+  a "weakest concept" summary at the end of each session.
+- **First-visit onboarding** on the dashboard, dismissible and never repeated.
 - **Private by design**: no accounts, no server, no analytics cookies; progress
   lives in `localStorage`.
 - **Trilingual web presence**: the app is Arabic; `/fr/` and `/en/` are

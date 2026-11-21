@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, CheckCircle2, Flame, Trophy, X, Zap } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Flame, Trophy, X, Zap } from "lucide-react";
+import { getModuleById, getModulePath } from "@/lib/curriculum";
 import { cn, shuffleArray } from "@/lib/utils";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -130,7 +132,6 @@ export function QuizCard({
       onAnswer(buildReviewItem(selectedOption, false));
       setTimedOut(true);
       setIsSubmitted(true);
-      scheduleNext();
     };
 
     timerId = window.setInterval(tick, 250);
@@ -143,7 +144,6 @@ export function QuizCard({
     onAnswer,
     timeLimit,
     buildReviewItem,
-    scheduleNext,
   ]);
 
   const handleSelect = useCallback(
@@ -155,7 +155,11 @@ export function QuizCard({
   );
 
   const handleSubmit = useCallback(() => {
-    if (isSubmitted || selectedOption === null) return;
+    if (isSubmitted) {
+      if (selectedOption !== shuffledCorrectIndex) onNext?.();
+      return;
+    }
+    if (selectedOption === null) return;
 
     answeredRef.current = true;
     const timeTaken = timed
@@ -178,7 +182,9 @@ export function QuizCard({
     setTimedOut(false);
     setIsSubmitted(true);
     onAnswer(buildReviewItem(selectedOption, isCorrect));
-    scheduleNext();
+    // Correct answers flow on; a mistake stays on screen so the concept note
+    // and the correct answer can actually be read.
+    if (isCorrect) scheduleNext();
   }, [
     isSubmitted,
     selectedOption,
@@ -188,6 +194,7 @@ export function QuizCard({
     onAnswer,
     buildReviewItem,
     scheduleNext,
+    onNext,
   ]);
 
   const handleSkip = () => {
@@ -201,7 +208,6 @@ export function QuizCard({
     setIsSubmitted(true);
     setTimedOut(false);
     onAnswer(buildReviewItem(null, false));
-    scheduleNext();
   };
 
   // Keyboard shortcuts: 1-4 selects, Enter confirms. Refs keep the listener
@@ -239,6 +245,16 @@ export function QuizCard({
 
   const timerPercent = Math.min(100, Math.round((timeLeft / timeLimit) * 100));
   const isCorrectAnswer = selectedOption === shuffledCorrectIndex;
+  const showNext = isSubmitted && !isCorrectAnswer;
+
+  const ownerModule = getModuleById(question.moduleId);
+  const concept =
+    ownerModule?.concepts.find((item) => item.name === question.category) ??
+    (question.category ? undefined : ownerModule?.concepts[0]);
+  const conceptNote =
+    concept && concept.description && concept.description !== concept.name
+      ? concept.description
+      : null;
   const progress =
     currentIndex !== undefined && total
       ? Math.round(((currentIndex + 1) / total) * 100)
@@ -447,28 +463,52 @@ export function QuizCard({
             : ""}
         </p>
 
+        {showNext && (
+          <div className="mt-4 rounded-xl border border-orange-500/20 bg-orange-500/10 p-3 text-right">
+            <p className="text-xs font-bold text-orange-100">
+              {concept ? `المفهوم: ${concept.name}` : "راجع هذا المحور"}
+            </p>
+            {conceptNote && (
+              <p className="mt-1 text-[11px] leading-relaxed text-orange-100/80">
+                {conceptNote}
+              </p>
+            )}
+            {ownerModule && (
+              <Link
+                href={getModulePath(question.moduleId) ?? "/#curriculum"}
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-orange-200 transition-colors hover:text-white"
+              >
+                راجع المحور كاملاً
+                <ArrowLeft aria-hidden="true" className="h-3 w-3" />
+              </Link>
+            )}
+          </div>
+        )}
+
         <div className="mt-8 flex gap-2">
           <LiquidButton
-            onClick={handleSubmit}
-            disabled={selectedOption === null || isSubmitted}
+            onClick={showNext ? () => onNext?.() : handleSubmit}
+            disabled={!showNext && (selectedOption === null || isSubmitted)}
             className={cn(
               "flex-1",
-              (selectedOption === null || isSubmitted) &&
+              !showNext &&
+                (selectedOption === null || isSubmitted) &&
                 "cursor-not-allowed opacity-50 grayscale",
             )}
             variant="primary"
           >
-            {isSubmitted ? "النتيجة..." : "تأكيد الإجابة"}
+            {showNext ? "التالي" : isSubmitted ? "النتيجة..." : "تأكيد الإجابة"}
           </LiquidButton>
 
-          <button
-            type="button"
-            onClick={handleSkip}
-            disabled={isSubmitted}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-zinc-300 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            تخطي
-          </button>
+          {!isSubmitted && (
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-zinc-300 transition-colors hover:bg-white/10"
+            >
+              تخطي
+            </button>
+          )}
         </div>
 
         <p className="mt-3 hidden text-center text-[10px] text-zinc-600 sm:block">

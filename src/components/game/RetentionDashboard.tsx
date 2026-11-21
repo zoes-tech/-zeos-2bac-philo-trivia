@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   ArrowLeft,
   CalendarCheck,
@@ -10,6 +11,7 @@ import {
   RotateCcw,
   Target,
   Timer,
+  X,
 } from "lucide-react";
 import { DAILY_SIZE, localDateKey } from "@/lib/daily";
 import { MODULES_BY_LEVEL, TOTAL_MODULES, TOTAL_QUESTIONS } from "@/lib/curriculum";
@@ -30,6 +32,15 @@ function focusQuiz() {
  * a skeleton is rendered during hydration so the server HTML stays stable.
  */
 export function RetentionDashboard() {
+  const [introDismissed, setIntroDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("zoes-onboarding") === "1";
+    } catch {
+      return false;
+    }
+  });
+
   const currentQuiz = useGameStore((state) => state.currentQuiz);
   const dailyResult = useGameStore((state) => state.dailyResult);
   const dailyStreak = useGameStore((state) => state.dailyStreak);
@@ -50,6 +61,16 @@ export function RetentionDashboard() {
   const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
   const isReturning =
     dailyStreak > 0 || recentResults.length > 0 || completedQuizzes.length > 0;
+  const showIntro = !isReturning && !introDismissed;
+
+  const dismissIntro = () => {
+    setIntroDismissed(true);
+    try {
+      localStorage.setItem("zoes-onboarding", "1");
+    } catch {
+      // Ignore storage failures; the panel just reappears next visit.
+    }
+  };
 
   const bacModules = MODULES_BY_LEVEL["2nd-bac"];
   // Suggest the smallest unfinished module first: an 86-question quiz is a
@@ -125,6 +146,31 @@ export function RetentionDashboard() {
           </div>
         </div>
 
+        {showIntro && (
+          <div className="mt-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-white">
+                  كيف تستعمل التطبيق؟
+                </h3>
+                <ol className="mt-2 list-inside list-decimal space-y-1 text-xs leading-relaxed text-zinc-400">
+                  <li>ابدأ بتحدي اليوم أو بالمحور المقترح.</li>
+                  <li>أجب على الأسئلة؛ كل خطأ يُحفظ في بنك الأخطاء.</li>
+                  <li>راجع أخطاءك لاحقاً، وحافظ على سلسلتك اليومية.</li>
+                </ol>
+              </div>
+              <button
+                type="button"
+                onClick={dismissIntro}
+                aria-label="إغلاق الشرح"
+                className="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <article className="flex flex-col justify-between gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] p-4">
             <div>
@@ -169,7 +215,7 @@ export function RetentionDashboard() {
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
                 {mistakes.length > 0
-                  ? `${mistakes.length} سؤالاً محفوظاً من إجاباتك الخاطئة. تخرج من القائمة عندما تجيب صحيحاً.`
+                  ? `بنك أخطائك: ${mistakes.length}. تخرج الأسئلة منه عندما تجيب صحيحاً.`
                   : "لا توجد أخطاء محفوظة بعد. كل خطأ في أي اختبار سيُضاف هنا تلقائياً."}
               </p>
             </div>
@@ -189,7 +235,7 @@ export function RetentionDashboard() {
             >
               <RotateCcw aria-hidden="true" className="h-4 w-4" />
               {mistakes.length > 0
-                ? `راجع ${Math.min(mistakes.length, 20)} سؤالاً`
+                ? `راجع أخطاءك (${Math.min(mistakes.length, 20)})`
                 : "لا أخطاء للمراجعة"}
             </button>
           </article>

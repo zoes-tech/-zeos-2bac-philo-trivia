@@ -587,9 +587,23 @@ export const SITE_CONTENT = {
 } satisfies Record<Locale, SiteContent>;
 
 export function questionCountLabel(locale: Locale, count: number): string {
-  if (locale === "ar") return `${count} سؤالاً`;
+  if (locale === "ar") {
+    if (count === 1) return "سؤال واحد";
+    if (count === 2) return "سؤالان";
+    if (count <= 10) return `${count} أسئلة`;
+    return `${count} سؤالاً`;
+  }
   if (locale === "fr") return `${count} questions`;
   return `${count} questions`;
+}
+
+/** Arabic count for mistakes, used by the result card. */
+export function mistakeCountLabel(count: number): string {
+  if (count === 0) return "0 أخطاء";
+  if (count === 1) return "خطأ واحد";
+  if (count === 2) return "خطأان";
+  if (count <= 10) return `${count} أخطاء`;
+  return `${count} خطأً`;
 }
 
 /**

@@ -67,6 +67,8 @@ interface GameState {
   lastQuizResult: QuizResult | null;
   /** Keys are `moduleId:questionId`; question ids repeat across modules. */
   mistakes: string[];
+  /** How many times each mistake key was missed; drives review ordering. */
+  mistakeCounts: Record<string, number>;
   recentResults: QuizResult[];
   dailyResult: DailyResult | null;
   dailyStreak: number;
@@ -100,6 +102,7 @@ export const useGameStore = create<GameState>()(
       currentQuiz: null,
       lastQuizResult: null,
       mistakes: [],
+      mistakeCounts: {},
       recentResults: [],
       dailyResult: null,
       dailyStreak: 0,
@@ -163,9 +166,15 @@ export const useGameStore = create<GameState>()(
       },
 
       startMistakeReview: () => {
+        const state = get();
         const questions: QuizQuestion[] = [];
+        // Most-missed questions first: repeated mistakes are the strongest
+        // signal of what needs work.
+        const keys = [...state.mistakes].sort(
+          (a, b) => (state.mistakeCounts[b] ?? 0) - (state.mistakeCounts[a] ?? 0),
+        );
 
-        for (const key of get().mistakes) {
+        for (const key of keys) {
           const separator = key.indexOf(":");
           const moduleId = key.slice(0, separator);
           const questionId = key.slice(separator + 1);
@@ -196,6 +205,14 @@ export const useGameStore = create<GameState>()(
               ? state.mistakes
               : [...state.mistakes, key];
 
+          const previousCount = state.mistakeCounts[key] ?? 0;
+          const mistakeCounts = { ...state.mistakeCounts };
+          if (answer.isCorrect) {
+            delete mistakeCounts[key];
+          } else {
+            mistakeCounts[key] = previousCount + 1;
+          }
+
           const today = localDateKey();
           const streakUpdate =
             state.lastActiveDate === today
@@ -212,6 +229,7 @@ export const useGameStore = create<GameState>()(
             ...state,
             ...streakUpdate,
             mistakes,
+            mistakeCounts,
             currentQuiz: {
               ...state.currentQuiz,
               score: state.currentQuiz.score + (answer.isCorrect ? 1 : 0),
@@ -304,6 +322,7 @@ export const useGameStore = create<GameState>()(
         unlockedPhilosophers: state.unlockedPhilosophers,
         lastQuizResult: state.lastQuizResult,
         mistakes: state.mistakes,
+        mistakeCounts: state.mistakeCounts,
         recentResults: state.recentResults,
         dailyResult: state.dailyResult,
         dailyStreak: state.dailyStreak,
@@ -312,10 +331,14 @@ export const useGameStore = create<GameState>()(
         currentQuiz: state.currentQuiz,
       }),
       // Keep new fields working for users who persisted the old shape.
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as Partial<GameState>),
-      }),
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<GameState>;
+        const mistakeCounts =
+          saved.mistakeCounts ??
+          Object.fromEntries((saved.mistakes ?? []).map((key) => [key, 1]));
+
+        return { ...current, ...saved, mistakeCounts };
+      },
     },
   ),
 );
