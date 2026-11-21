@@ -7,7 +7,7 @@ import { QuizResultCard } from "@/components/QuizResultCard";
 import { useGameStore, type QuizReviewItem } from "@/store/useStore";
 import { useScoring, useScoreAnimation } from "@/contexts/ScoringProvider";
 import { ALL_MODULES, MODULES_BY_LEVEL } from "@/lib/curriculum";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Trophy, ChevronRight, BarChart3, Flame, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LiquidButton } from "@/components/ui/LiquidButton";
@@ -66,6 +66,26 @@ export function GameShell() {
       endQuiz();
     }
   };
+
+  // `/2bac/human-condition/` links here with `?module=human-condition`, so a
+  // shared module page opens the matching quiz directly.
+  useEffect(() => {
+    const moduleId = new URLSearchParams(window.location.search).get("module");
+    if (!moduleId) return;
+
+    const store = useGameStore.getState();
+    if (store.currentQuiz) return;
+
+    const target = ALL_MODULES.find((module) => module.id === moduleId);
+    if (target?.quiz?.length) {
+      store.startQuiz(target.id, target.quiz);
+      requestAnimationFrame(() => {
+        document
+          .getElementById("play")
+          ?.scrollIntoView({ block: "start", behavior: "smooth" });
+      });
+    }
+  }, []);
 
   const handleRetryLastQuiz = () => {
     if (!lastQuizResult) return;

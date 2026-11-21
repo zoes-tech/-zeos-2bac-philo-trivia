@@ -27,6 +27,7 @@ correct in the **server-rendered** HTML:
 | `/` | `src/app/(ar)/layout.tsx` | `lang="ar-MA" dir="rtl"` |
 | `/fr/` | `src/app/(fr)/layout.tsx` | `lang="fr" dir="ltr"` |
 | `/en/` | `src/app/(en)/layout.tsx` | `lang="en" dir="ltr"` |
+| `/[level]/[module]/` | `src/app/(ar)/[level]/[module]/page.tsx` | Arabic theme pages |
 
 Client-side patching of `document.documentElement.lang` would not be enough for
 crawlers, hence the separate roots. A side effect is that switching language
@@ -38,9 +39,17 @@ does a full page load, which is fine (and cacheable) for static content.
   stats, features, curriculum list, how-it-works, FAQ and footer as static HTML.
 - `GameShell` (`src/components/game/GameShell.tsx`) is the only client island
   on the home page. It owns the quiz screens, the level map and the result card.
+- Theme pages (`/[level]/[module]/`) are **fully server-rendered**. They reuse
+  the JSON data to publish an overview, the per-concept question distribution,
+  four worked examples and internal links. No client providers are mounted
+  there, so they ship only the Next/React baseline.
+- `?module=<id>` on the home page deep-links into a quiz; theme pages use it for
+  their CTA, and it makes shared links open the right module.
 - `RootShell` adds the shared `<html>/<body>`, providers, background orbs,
   skip link, optional analytics and the service-worker registration.
 - `AppProviders` wraps `MotionConfig reducedMotion="user"` and `ScoringProvider`.
+  It is mounted on the home page only, around `GameIsland`, not in the locale
+  layout, so theme pages do not pay for Framer Motion or the scoring context.
 
 Keeping marketing copy server-rendered is what makes the page indexable: the
 Arabic home page ships ~500 words of visible text plus five JSON-LD graphs,

@@ -6,7 +6,10 @@ import {
   LEVELS,
   MODULES_BY_LEVEL,
   TOTAL_QUESTIONS,
+  modulePath,
+  type LevelId,
 } from "@/lib/curriculum";
+import type { Module } from "@/types";
 import { SITE } from "@/lib/site";
 
 type JsonLd = Record<string, unknown>;
@@ -129,8 +132,7 @@ export function faqJsonLd(content: SiteContent): JsonLd {
 export function breadcrumbJsonLd(
   labels: { home: string; current: string },
   currentPath: string,
-): JsonLd {
-  return {
+): JsonLd {  return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
@@ -145,6 +147,62 @@ export function breadcrumbJsonLd(
         position: 2,
         name: labels.current,
         item: `${SITE.url}${currentPath}`,
+      },
+    ],
+  };
+}
+
+/** Structured data for an individual curriculum module page. */
+export function moduleJsonLd(level: LevelId, module: Module): JsonLd {
+  const copy = MODULE_COPY.ar[module.id];
+  const path = modulePath(level, module.id);
+  const questionCount = module.quiz?.length ?? 0;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Quiz",
+    "@id": `${SITE.url}${path}#quiz`,
+    name: copy?.title ?? module.title,
+    description: copy?.description ?? module.description,
+    url: `${SITE.url}${path}`,
+    inLanguage: "ar-MA",
+    educationalLevel: LEVEL_COPY.ar[level].title,
+    numberOfQuestions: questionCount,
+    isAccessibleForFree: true,
+    about: module.concepts.map((concept) => concept.name),
+    isPartOf: { "@id": `${SITE.url}/#website` },
+    publisher: { "@id": `${SITE.url}/#organization` },
+  };
+}
+
+export function moduleBreadcrumbJsonLd(
+  level: LevelId,
+  module: Module,
+): JsonLd {
+  const copy = MODULE_COPY.ar[module.id];
+  const path = modulePath(level, module.id);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "الرئيسية",
+        item: `${SITE.url}/`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: LEVEL_COPY.ar[level].title,
+        item: `${SITE.url}/#curriculum`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: copy?.title ?? module.title,
+        item: `${SITE.url}${path}`,
       },
     ],
   };

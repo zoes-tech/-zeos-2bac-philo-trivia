@@ -591,3 +591,35 @@ export function questionCountLabel(locale: Locale, count: number): string {
   if (locale === "fr") return `${count} questions`;
   return `${count} questions`;
 }
+
+/**
+ * Copy for the Arabic module pages. Kept separate from the landing copy because
+ * these strings only ever render on `/tronc-commun/*`, `/1bac/*`, `/2bac/*`.
+ */
+/** Arabic number agreement for "concept(s)", used on module pages. */
+export function conceptCountLabel(count: number): string {
+  if (count === 1) return "مفهوم واحد";
+  if (count === 2) return "مفهومين";
+  if (count <= 10) return `${count} مفاهيم`;
+  return `${count} مفهوماً`;
+}
+
+export const MODULE_PAGE_COPY = {
+  home: "الرئيسية",
+  curriculum: "المحاور",
+  startCta: "ابدأ اختبار هذا المحور",
+  startNote: "يفتح التطبيق ويبدأ هذا الاختبار مباشرة.",
+  categoriesTitle: "توزيع الأسئلة حسب المفهوم",
+  categoriesIntro: "عدد الأسئلة المخصصة لكل مفهوم داخل هذا المحور.",
+  samplesTitle: "أمثلة من الأسئلة",
+  samplesIntro: "أسئلة نموذجية من بنك هذا المحور، مع الإجابة الصحيحة.",
+  correctAnswer: "الإجابة الصحيحة",
+  conceptsTitle: "المفاهيم الأساسية",
+  relatedTitle: "محاور أخرى في نفس المستوى",
+  allModules: "كل المحاور",
+  disclaimer:
+    "أسئلة تدريبية وفق محاور المقرر المغربي، وليست أسئلة امتحان رسمية.",
+  bankNote: (count: number) =>
+    `هذه أمثلة فقط. الاختبار الكامل يحتوي على ${count} سؤالاً، مع تصحيح فوري ومراجعة للأخطاء في النهاية.`,
+} as const;
+

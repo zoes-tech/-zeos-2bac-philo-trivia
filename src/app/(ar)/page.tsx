@@ -1,4 +1,5 @@
 import { GameIsland } from "@/components/game/GameIsland";
+import { AppProviders } from "@/components/site/AppProviders";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
   CurriculumList,
@@ -37,7 +38,9 @@ export default function HomePage() {
       <main id="main">
         <Hero content={content} playHref="#play" />
         <StatsGrid content={content} />
-        <GameIsland />
+        <AppProviders>
+          <GameIsland />
+        </AppProviders>
         <FeatureGrid content={content} />
         <CurriculumList content={content} locale="ar" />
         <HowItWorks content={content} />

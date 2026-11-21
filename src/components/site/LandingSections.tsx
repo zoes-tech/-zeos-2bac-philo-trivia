@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  ArrowLeft,
   BookOpen,
   ChevronDown,
   Github,
@@ -17,7 +18,7 @@ import {
   type SiteContent,
 } from "@/i18n/content";
 import type { Locale } from "@/i18n/locales";
-import { LEVELS, MODULES_BY_LEVEL } from "@/lib/curriculum";
+import { LEVELS, MODULES_BY_LEVEL, modulePath } from "@/lib/curriculum";
 
 const FEATURE_ICONS: LucideIcon[] = [
   Target,
@@ -179,7 +180,16 @@ export function CurriculumList({
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <h4 className="text-sm font-bold text-white">
-                        {copy?.title ?? module.title}
+                        {locale === "ar" ? (
+                          <Link
+                            href={modulePath(level.id, module.id)}
+                            className="transition-colors hover:text-cyan-300"
+                          >
+                            {copy?.title ?? module.title}
+                          </Link>
+                        ) : (
+                          (copy?.title ?? module.title)
+                        )}
                       </h4>
                       <span className="shrink-0 rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-zinc-400">
                         {questionCountLabel(locale, count)}
@@ -188,6 +198,15 @@ export function CurriculumList({
                     <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
                       {copy?.description ?? module.description}
                     </p>
+                    {locale === "ar" && (
+                      <Link
+                        href={modulePath(level.id, module.id)}
+                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300 transition-colors hover:text-cyan-200"
+                      >
+                        صفحة المحور
+                        <ArrowLeft aria-hidden="true" className="h-3 w-3" />
+                      </Link>
+                    )}
                   </li>
                 );
               })}

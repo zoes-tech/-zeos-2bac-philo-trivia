@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import type { SiteContent } from "@/i18n/content";
+import {
+  LEVEL_COPY,
+  MODULE_COPY,
+  type SiteContent,
+} from "@/i18n/content";
 import { HREFLANG_PATHS, localePath, type Locale } from "@/i18n/locales";
+import { modulePath, type LevelId } from "@/lib/curriculum";
+import type { Module } from "@/types";
 import { SITE } from "@/lib/site";
 
 const OG_LOCALES: Record<Locale, string> = {
@@ -76,3 +82,71 @@ export const siteViewport: Viewport = {
   initialScale: 1,
   colorScheme: "dark",
 };
+
+/** Metadata for an Arabic curriculum module page. */
+export function buildModuleMetadata(
+  level: LevelId,
+  module: Module,
+): Metadata {
+  const copy = MODULE_COPY.ar[module.id] ?? {
+    title: module.title,
+    description: module.description,
+  };
+  const levelTitle = LEVEL_COPY.ar[level].title;
+  const path = modulePath(level, module.id);
+  const count = module.quiz?.length ?? 0;
+
+  const title = `${copy.title} — ${levelTitle} | ${SITE.name}`;
+  const description = `${copy.description} اختبر نفسك في ${count} سؤالاً مع تصحيح فوري ومراجعة للأخطاء.`;
+
+  return {
+    metadataBase: new URL(SITE.url),
+    title,
+    description,
+    keywords: [
+      copy.title,
+      `${copy.title} باك`,
+      levelTitle,
+      "الفلسفة باكالوريا",
+      "أسئلة فلسفة",
+      "مراجعة الفلسفة",
+    ],
+    alternates: {
+      canonical: path,
+      languages: { "ar-MA": path, "x-default": path },
+    },
+    openGraph: {
+      title,
+      description,
+      url: path,
+      siteName: SITE.name,
+      type: "article",
+      locale: "ar_MA",
+      images: [
+        {
+          url: SITE.ogImage,
+          width: SITE.ogImageSize.width,
+          height: SITE.ogImageSize.height,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [SITE.ogImage],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
+  };
+}

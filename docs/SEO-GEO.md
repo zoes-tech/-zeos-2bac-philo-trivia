@@ -4,8 +4,9 @@
 
 ### Crawlable structure
 
-- Three indexable URLs: `/`, `/fr/`, `/en/` — each with its own `lang`, `dir`,
-  title, description and canonical.
+- Ten indexable URLs: `/`, `/fr/`, `/en/` and seven theme pages such as
+  `/2bac/human-condition/`, each with its own `lang`, `dir`, title,
+  description and canonical.
 - `hreflang` for `ar-MA`, `fr`, `en` and `x-default`, in both the HTML head and
   `sitemap.xml`.
 - A real `<h1>` per page, descriptive H2s, and **server-rendered** marketing
@@ -22,7 +23,8 @@
 | `SoftwareApplication` (`EducationalApplication`) | all pages | What the app is, free offer, features |
 | `ItemList` of `LearningResource` | all pages | Each curriculum module as a learning resource |
 | `FAQPage` | all pages | Question/answer pairs for answer engines |
-| `BreadcrumbList` | `/fr/`, `/en/` | Locale navigation |
+| `BreadcrumbList` | `/fr/`, `/en/`, theme pages | Navigation |
+| `Quiz` | theme pages | Per-module question count, level, related concepts |
 
 All blocks are injected by `src/components/seo/JsonLd.tsx`, which escapes `<`
 to keep the JSON safe inside `<script>`.
@@ -71,10 +73,11 @@ Then check:
 
 ## What is still weak (and the next levers)
 
-1. **One URL for 349 questions.** The quiz renders client-side, so the question
-   bank is not individually indexable. The highest-value next step is generated
-   pages such as `/2bac/human-condition/` with a server-rendered study summary
-   and an embedded quiz. This is phase 2 in [`ROADMAP.md`](ROADMAP.md).
+1. **The full question bank is still client-side.** Theme pages publish four
+   worked examples each plus the topic structure, but the remaining ~320
+   questions only exist inside the quiz. The next lever is reviewed study
+   summaries per theme, not more question dumps: thin auto-generated pages would
+   cannibalise the ones that now exist.
 2. **No custom domain yet.** `*.pages.dev` is indexable but has weaker trust
    signals and no branded search demand. A cheap `.com`/`.ma` with the same
    content is worth more than any metadata tweak.
@@ -82,8 +85,8 @@ Then check:
    options: school and teacher pages, Moroccan education forums/Facebook groups,
    GitHub topic pages, DEV.to / Hashnode write-ups, open-source directories.
 4. **Thin study content.** `concepts[].content` is mostly a single sentence.
-   Teachers should expand the 7 themes into short, citable summaries before
-   promising "revision course".
+   Theme pages are honest but short (~290 words). Teachers should expand the 7
+   themes into reviewed, citable summaries before promising "revision course".
 5. **No freshness signal.** `lastmod` changes on every build, which is only
    honest if content changes too. Publish a changelog or dated updates.
 

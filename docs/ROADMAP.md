@@ -27,12 +27,14 @@ consequence of being useful, not a layer on top.
 **Goal:** 7–10 pages that can rank for long-tail Arabic queries, and that AI
 engines can cite.
 
-- [ ] Generate `/2bac/[module]/` (and equivalents) from the curriculum data.
-- [ ] Each page: server-rendered summary (person, notions, key questions), the
-      embedded quiz, previous/next module, and `LearningResource` JSON-LD.
+- [x] Generate `/{level}/{module}/` pages from the curriculum data.
+- [x] Each page: server-rendered overview, question distribution, four worked
+      examples, related modules and `Quiz` + `BreadcrumbList` JSON-LD.
+- [x] Deep-link a theme into the quiz with `?module=<id>`.
+- [x] Internal links: home curriculum → theme pages → related themes.
 - [ ] Expand `concepts[].content` with reviewed, teacher-approved Arabic
-      summaries. This is the real content moat.
-- [ ] Add an internal-link graph: home → level → module → related module.
+      summaries. This is the real content moat and the blocker for long-tail
+      rankings.
 - [ ] Measure: indexed pages, impressions per query cluster, average position.
 
 **Content work required:** ~2–3 paragraphs per module (7 modules). Drafts can be

@@ -18,6 +18,8 @@ the public front door for Zoes Tech's learning tools.
 ## Features
 
 - **349 questions** across 7 themes and 3 levels (tronc commun, 1re and 2e bac).
+- **7 indexable theme pages** (`/2bac/human-condition/`, …) with an overview,
+  question distribution, worked examples and links to the quiz.
 - **Instant feedback** with a mistake-review card at the end of every quiz.
 - **Gamification**: base points, speed bonus, streak multipliers up to ×2.5.
 - **Offline-first**: progressive web app with a hand-written service worker.
@@ -43,6 +45,7 @@ src/
     (ar)/            Arabic app at /            (own <html lang="ar-MA" dir="rtl">)
     (fr)/fr/         French overview at /fr/     (own <html lang="fr" dir="ltr">)
     (en)/en/         English overview at /en/    (own <html lang="en" dir="ltr">)
+    (ar)/[level]/[module]/   Theme pages, e.g. /2bac/human-condition/
     globals.css
   components/
     game/            GameShell: the client-side quiz island
@@ -107,8 +110,12 @@ Each JSON file is an array of modules:
 ```
 
 `src/lib/curriculum.ts` is the single place that imports and aggregates the
-banks. Counts on the site, in the sitemap and in `llms.txt` are derived from
-this data, so adding questions updates everything after one build.
+banks. Counts on the site, in the sitemap, in `llms.txt` and on the generated
+theme pages are derived from this data, so adding questions updates everything
+after one build.
+
+Adding a module also creates its page at `/{level-slug}/{module-id}/`
+automatically (`generateStaticParams`).
 
 ## Environment variables
 
