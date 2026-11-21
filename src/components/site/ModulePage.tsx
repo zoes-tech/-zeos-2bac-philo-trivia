@@ -8,6 +8,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { getExplanation } from "@/lib/explanations";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import {
@@ -167,7 +168,9 @@ export function ModulePage({
           </p>
 
           <div className="mt-5 space-y-4">
-            {samples.map((question, index) => (
+            {samples.map((question, index) => {
+              const explanation = getExplanation(module.id, question.id);
+              return (
               <article
                 key={question.id}
                 className="glass-panel rounded-2xl p-5"
@@ -213,8 +216,15 @@ export function ModulePage({
                     {question.options[question.correctAnswer]}
                   </span>
                 </p>
+                {explanation && (
+                  <p className="mt-2 rounded-lg bg-white/[0.03] p-2.5 text-xs leading-relaxed text-zinc-300">
+                    <span className="font-bold text-cyan-200">الشرح: </span>
+                    {explanation}
+                  </p>
+                )}
               </article>
-            ))}
+              );
+            })}
           </div>
 
           <p className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-xs leading-relaxed text-zinc-400">

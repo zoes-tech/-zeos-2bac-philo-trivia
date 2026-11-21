@@ -121,6 +121,8 @@ const llms = `# رحلة الفيلسوف — Philosopher's Journey
 - Themes: ${modules.map((module) => module.title).join("، ")}
 - Offline: yes, installable progressive web app
 - Accounts: none; progress is local to the browser
+- Explanations: every question has a short Arabic explanation, shown after a
+  mistake and on its theme page (drafts pending teacher review)
 
 ## Pages
 

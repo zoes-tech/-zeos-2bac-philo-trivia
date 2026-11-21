@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, CheckCircle2, Flame, Trophy, X, Zap } from "lucide-react";
 import { getModuleById, getModulePath } from "@/lib/curriculum";
+import { getExplanation } from "@/lib/explanations";
 import { cn, shuffleArray } from "@/lib/utils";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -255,6 +256,7 @@ export function QuizCard({
     concept && concept.description && concept.description !== concept.name
       ? concept.description
       : null;
+  const explanation = getExplanation(question.moduleId, question.id);
   const progress =
     currentIndex !== undefined && total
       ? Math.round(((currentIndex + 1) / total) * 100)
@@ -482,6 +484,15 @@ export function QuizCard({
                 <ArrowLeft aria-hidden="true" className="h-3 w-3" />
               </Link>
             )}
+          </div>
+        )}
+
+        {showNext && explanation && (
+          <div className="mt-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-3 text-right">
+            <p className="text-[11px] font-bold text-cyan-200">شرح مبسط</p>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-300">
+              {explanation}
+            </p>
           </div>
         )}
 

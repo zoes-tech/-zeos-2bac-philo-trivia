@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/generate-seo.mjs",
+    "build": "next build && node scripts/generate-seo.mjs && node scripts/check-content.mjs",
     "preview": "npx --yes serve out",
     "start": "npx --yes serve out",
     "lint": "eslint",

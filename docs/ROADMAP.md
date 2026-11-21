@@ -60,12 +60,14 @@ phase is about making the quiz teach, not just score.
       dashboard, never repeated.
 - [x] **Session summary**: weakest concept of the session, with a link to the
       theme page.
-- [ ] **Answer explanations.** Add an optional `explanation` field and show it
-      with the concept note. Requires teacher-reviewed content; do not mass
-      generate it.
+- [x] **Answer explanations** for all 349 questions, kept in
+      `src/data/explanations/` and shown after a mistake and on theme pages.
+      Drafted from the question, the marked answer and the official program
+      axes; the build now fails if a question has no explanation.
+- [ ] **Teacher review of the explanations.** Correct disputed items in the
+      JSON; only then describe them as reviewed rather than "شرح مبسط".
 - [ ] **Teacher-reviewed summaries** for the seven themes (`concepts[].content`).
-      This is the content moat for SEO and AI citations, and the prerequisite
-      for real explanations.
+      This is the content moat for SEO and AI citations.
 - [ ] **Install prompt**: offer "add to home screen" after the second visit.
 - [ ] **Performance budget**: add a build check that fails above 180 KB gzip
       initial JS, and measure LCP on a mid-range phone.

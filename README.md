@@ -25,8 +25,9 @@ free, open source and free of product pitches.
 - **Mistake bank**: every wrong answer is stored locally and can be replayed as
   its own quiz; repeated misses are reviewed first, and correct answers remove
   them.
-- **Concept feedback**: a wrong answer stays on screen with the related concept
-  and a link to the full theme page, instead of auto-advancing.
+- **Concept feedback**: a wrong answer stays on screen with the related concept,
+  a short Arabic explanation and a link to the full theme page, instead of
+  auto-advancing.
 - **Resume**: an interrupted quiz is persisted and restored on the next visit.
 - **Study mode**: a no-timer, no-speed-bonus mode for calm revision.
 - **Instant feedback** with a mistake-review card at the end of every quiz.
@@ -144,6 +145,7 @@ change plus a rebuild — see [`docs/DEPLOY-CLOUDFLARE.md`](docs/DEPLOY-CLOUDFLA
 - [Architecture](docs/ARCHITECTURE.md)
 - [Deploying to Cloudflare Pages](docs/DEPLOY-CLOUDFLARE.md)
 - [SEO and GEO](docs/SEO-GEO.md)
+- [Content guide](docs/CONTENT.md)
 - [Roadmap: retention and learning first](docs/ROADMAP.md)
 
 ## Privacy
