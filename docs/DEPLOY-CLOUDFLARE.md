@@ -36,7 +36,7 @@ In GitHub → **Settings → Secrets and variables → Actions**:
 
 | Secret | Where to get it |
 | --- | --- |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard → My Profile → API Tokens → *Edit Cloudflare Workers* template, scoped to the account. For Pages-only deploys, a token with **Account → Cloudflare Pages → Edit** is enough. |
+| `CLOUDFLARE_API_TOKEN` | Create a **custom token** with exactly **Account → Cloudflare Pages → Edit**, limited to the one account. Do not use a global/API key token. |
 | `CLOUDFLARE_ACCOUNT_ID` | Right-hand sidebar of the Workers & Pages overview, or any zone's overview page. |
 
 Optional repository **variable** (Settings → Variables):
@@ -45,13 +45,25 @@ Optional repository **variable** (Settings → Variables):
 | --- | --- |
 | `SITE_URL` | Canonical URL, e.g. `https://philo.example.com`. Defaults to `https://zoes-philo.pages.dev`. |
 
-## 3. Deploy
+## 3. Security checks in CI
+
+The workflow runs before every deploy:
+
+- `npm audit --omit=dev --audit-level=high` — production dependencies must have
+  no high/critical advisory;
+- typecheck and lint;
+- the content integrity check (349/349 explanations).
+
+`public/_headers` ships the security headers (CSP, HSTS, frame denial, referrer
+and permissions policies). See [`SECURITY.md`](../SECURITY.md).
+
+## 4. Deploy
 
 Push to `main`, or run the workflow manually:
 
 > **Actions → Deploy to Cloudflare Pages → Run workflow**
 
-## 4. Attach a domain
+## 5. Attach a domain
 
 Free option: use the generated `https://zoes-philo.pages.dev` URL. It is
 indexable and HTTPS by default.
@@ -67,6 +79,16 @@ Custom domain later:
 Because every URL is derived from `NEXT_PUBLIC_SITE_URL`, this updates the
 canonical tag, hreflang, Open Graph URLs, sitemap, robots and JSON-LD in one
 build. No find-and-replace.
+
+## 6. Retire the Vercel deployment
+
+Only after the Pages URL and (if used) the custom domain serve the new site:
+
+1. verify canonical, sitemap and hreflang point to the new origin;
+2. keep the old Vercel project for a short rollback window if you need it;
+3. then delete the Vercel project and remove its domain/DNS records.
+
+Leaving both live splits indexing and keeps an unmaintained deployment online.
 
 ## Headers and caching
 

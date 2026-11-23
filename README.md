@@ -146,6 +146,7 @@ change plus a rebuild — see [`docs/DEPLOY-CLOUDFLARE.md`](docs/DEPLOY-CLOUDFLA
 - [Deploying to Cloudflare Pages](docs/DEPLOY-CLOUDFLARE.md)
 - [SEO and GEO](docs/SEO-GEO.md)
 - [Content guide](docs/CONTENT.md)
+- [Security policy](SECURITY.md)
 - [Roadmap: retention and learning first](docs/ROADMAP.md)
 
 ## Privacy
