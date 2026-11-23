@@ -4,12 +4,13 @@ import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { PageSeo } from "@/components/site/PageSeo";
 import { SampleQuestionCard } from "@/components/site/SampleQuestionCard";
 import { getLevelCopy, getModuleCopy } from "@/i18n/curriculum-copy";
+import { playHref } from "@/lib/routes";
 import {
   conceptCountLabel,
   MODULE_PAGE_COPY,
   questionCountLabel,
 } from "@/i18n/labels";
-import { localePath, type Locale } from "@/i18n/locales";
+import { localePath, MODULE_PAGE_LOCALES } from "@/i18n/locales";
 import { SITE_CONTENT } from "@/i18n/site-content";
 import { moduleCrumbs } from "@/lib/breadcrumbs";
 import {
@@ -28,12 +29,11 @@ import type { Module } from "@/types";
 export function ModulePage({
   level,
   module,
-  locale = "ar",
 }: {
   level: LevelId;
   module: Module;
-  locale?: Locale;
 }) {
+  const locale = MODULE_PAGE_LOCALES[0];
   const copy = getModuleCopy(locale, module);
   const levelTitle = getLevelCopy(locale, level).title;
   const count = module.quiz?.length ?? 0;
@@ -100,7 +100,7 @@ export function ModulePage({
             </p>
           </div>
           <Link
-            href={`${localePath(locale)}?module=${module.id}#play`}
+            href={playHref(module.id)}
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-5 py-3 text-sm font-bold text-white shadow-[0_0_24px_rgba(6,182,212,0.35)] transition-shadow hover:shadow-[0_0_36px_rgba(6,182,212,0.55)]"
           >
             <Play aria-hidden="true" className="h-4 w-4" />

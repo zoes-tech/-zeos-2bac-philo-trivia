@@ -5,13 +5,8 @@ interface AnswerScoreInput {
 }
 
 export interface AnswerScoreBreakdown {
-  basePoints: number;
-  speedBonus: number;
-  streakBonus: number;
   totalPoints: number;
   nextStreak: number;
-  multiplier: number;
-  speedTier: 'instant' | 'quick' | 'steady' | 'missed';
 }
 
 const BASE_POINTS = 100;
@@ -24,40 +19,32 @@ export const calculateStreakMultiplier = (streak: number): number => {
   return 1.0;
 };
 
-const calculateSpeedBonus = (timeTaken?: number): { bonus: number; tier: AnswerScoreBreakdown['speedTier'] } => {
+const calculateSpeedBonus = (
+  timeTaken?: number,
+): { bonus: number; tier: 'instant' | 'quick' | 'steady' } => {
   if (timeTaken === undefined || timeTaken === null) return { bonus: 0, tier: 'steady' };
   if (timeTaken <= 4) return { bonus: 50, tier: 'instant' };
   if (timeTaken <= 8) return { bonus: 25, tier: 'quick' };
   return { bonus: 0, tier: 'steady' };
 };
 
-export const calculateAnswerScore = ({ isCorrect, timeTaken, currentStreak }: AnswerScoreInput): AnswerScoreBreakdown => {
+export const calculateAnswerScore = ({
+  isCorrect,
+  timeTaken,
+  currentStreak,
+}: AnswerScoreInput): AnswerScoreBreakdown => {
   if (!isCorrect) {
-    return {
-      basePoints: 0,
-      speedBonus: 0,
-      streakBonus: 0,
-      totalPoints: 0,
-      nextStreak: 0,
-      multiplier: 1,
-      speedTier: 'missed',
-    };
+    return { totalPoints: 0, nextStreak: 0 };
   }
 
   const nextStreak = currentStreak + 1;
   const multiplier = calculateStreakMultiplier(nextStreak);
-  const { bonus: speedBonus, tier: speedTier } = calculateSpeedBonus(timeTaken);
+  const speedBonus = calculateSpeedBonus(timeTaken).bonus;
   const streakBonus = Math.round(BASE_POINTS * (multiplier - 1));
-  const totalPoints = BASE_POINTS + speedBonus + streakBonus;
 
   return {
-    basePoints: BASE_POINTS,
-    speedBonus,
-    streakBonus,
-    totalPoints,
+    totalPoints: BASE_POINTS + speedBonus + streakBonus,
     nextStreak,
-    multiplier,
-    speedTier,
   };
 };
 
@@ -72,6 +59,10 @@ export function getRankInfo(points: number): { rank: string; emoji: string } {
   return (
     RANKS.find((item) => points >= item.min && points <= item.max) ?? RANKS[0]
   );
+}
+
+export function accuracyOf(correct: number, answered: number): number {
+  return answered > 0 ? Math.round((correct / answered) * 100) : 0;
 }
 
 export const getMasteryLabel = (accuracy: number): { label: string; emoji: string; tone: string } => {

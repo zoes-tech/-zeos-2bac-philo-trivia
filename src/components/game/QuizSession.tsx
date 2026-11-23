@@ -7,6 +7,7 @@ import { QuizCard } from "@/components/QuizCard";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { useGameStore } from "@/store/useStore";
 import { timeLimitFor } from "@/lib/quiz-rules";
+import { accuracyOf } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 
 export function QuizSession() {
@@ -51,7 +52,7 @@ export function QuizSession() {
           <span>
             {attempt.currentIndex + 1} / {attempt.total}
           </span>
-          <span>{Math.round((attempt.score / attempt.total) * 100)}%</span>
+          <span>{accuracyOf(attempt.score, attempt.reviewItems.length)}%</span>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -82,12 +83,11 @@ export function QuizSession() {
         key={`${attempt.moduleId}-${attempt.currentIndex}`}
         question={question}
         mode={quizMode}
-        onAnswer={(answer, timeTaken) => submitAnswer(answer, timeTaken)}
+        onAnswer={submitAnswer}
         onNext={advanceOrEnd}
         currentIndex={attempt.currentIndex}
         total={attempt.total}
         score={attempt.score}
-        category={question.category ?? ""}
         timeLimit={timeLimitFor(attempt.total)}
       />
 

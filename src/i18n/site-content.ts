@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n/locales";
+import { LEVELS, TOTAL_MODULES, TOTAL_QUESTIONS } from "@/lib/curriculum";
 
 export interface SiteContent {
   meta: {
@@ -54,7 +55,7 @@ export const SITE_CONTENT = {
     meta: {
       title: "رحلة الفيلسوف — اختبار الفلسفة للباكالوريا المغربية",
       description:
-        "تطبيق مجاني ومفتوح المصدر لمراجعة الفلسفة للباكالوريا المغربية: أسئلة تفاعلية على 7 محاور و3 مستويات، مع تصحيح فوري ومراجعة للأخطاء. يعمل دون إنترنت وبدون حساب.",
+        "تطبيق مجاني ومفتوح المصدر لمراجعة الفلسفة للباكالوريا المغربية: أسئلة تفاعلية على ${TOTAL_MODULES} محاور و${LEVELS.length} مستويات، مع تصحيح فوري ومراجعة للأخطاء. يعمل دون إنترنت وبدون حساب.",
       keywords: [
         "فلسفة الثانية باك",
         "الفلسفة للباكالوريا",
@@ -77,14 +78,14 @@ export const SITE_CONTENT = {
       title: "رحلة الفيلسوف",
       titleLine2: "اختبار الفلسفة للباكالوريا المغربية",
       subtitle:
-        "اختبار الفلسفة للباكالوريا المغربية: 349 سؤالاً على 7 محاور و3 مستويات، مع تصحيح فوري، سلاسل نقاط، ومراجعة أخطائك بعد كل اختبار.",
+        "اختبار الفلسفة للباكالوريا المغربية: ${TOTAL_QUESTIONS} سؤالاً على ${TOTAL_MODULES} محاور و${LEVELS.length} مستويات، مع تصحيح فوري، سلاسل نقاط، ومراجعة أخطائك بعد كل اختبار.",
       primaryCta: "ابدأ الاختبار الآن",
       secondaryCta: "استكشف المحاور",
     },
     stats: [
-      { value: "349", label: "سؤالاً تفاعلياً" },
-      { value: "7", label: "محاور من المقرر" },
-      { value: "3", label: "مستويات دراسية" },
+      { value: `${TOTAL_QUESTIONS}`, label: "سؤالاً تفاعلياً" },
+      { value: `${TOTAL_MODULES}`, label: "محاور من المقرر" },
+      { value: `${LEVELS.length}`, label: "مستويات دراسية" },
       { value: "0", label: "حساب مطلوب" },
     ],
     features: {
@@ -154,7 +155,7 @@ export const SITE_CONTENT = {
         },
         {
           q: "كم عدد الأسئلة والمحاور؟",
-          a: "يحتوي التطبيق على 349 سؤالاً موزعة على 7 محاور و3 مستويات: الجذع المشترك، الأولى باك، والثانية باك.",
+          a: "يحتوي التطبيق على ${TOTAL_QUESTIONS} سؤالاً موزعة على ${TOTAL_MODULES} محاور و3 مستويات: الجذع المشترك، الأولى باك، والثانية باك.",
         },
         {
           q: "هل يعمل بدون إنترنت؟",
@@ -191,7 +192,7 @@ export const SITE_CONTENT = {
     meta: {
       title: "Philosophe 2BAC — quiz de philosophie pour le bac marocain",
       description:
-        "Application gratuite et open source pour réviser la philosophie du baccalauréat marocain : 349 questions, 7 thèmes, 3 niveaux, correction immédiate et révision des erreurs. Sans compte, fonctionne hors ligne.",
+        "Application gratuite et open source pour réviser la philosophie du baccalauréat marocain : ${TOTAL_QUESTIONS} questions, ${TOTAL_MODULES} thèmes, ${LEVELS.length} niveaux, correction immédiate et révision des erreurs. Sans compte, fonctionne hors ligne.",
       keywords: [
         "philosophie 2 bac",
         "philosophie bac maroc",
@@ -209,17 +210,17 @@ export const SITE_CONTENT = {
     hero: {
       eyebrow: "Gratuit · open source · sans compte",
       title: "La philosophie du bac, en questions.",
-      titleLine2: "7 thèmes · 3 niveaux · gratuit",
+      titleLine2: `${TOTAL_MODULES} thèmes · ${LEVELS.length} niveaux · gratuit`,
       subtitle:
-        "349 questions interactives sur les 7 thèmes du programme marocain, réparties en 3 niveaux. Correction immédiate, séries de points et révision de vos erreurs.",
+        "${TOTAL_QUESTIONS} questions interactives sur les ${TOTAL_MODULES} thèmes du programme marocain, réparties en ${LEVELS.length} niveaux. Correction immédiate, séries de points et révision de vos erreurs.",
       primaryCta: "Lancer le quiz",
       secondaryCta: "Voir les thèmes",
       note: "L'interface et les questions du quiz sont en arabe, langue d'enseignement de la philosophie au Maroc. Cette page explique l'outil en français.",
     },
     stats: [
-      { value: "349", label: "questions" },
-      { value: "7", label: "thèmes du programme" },
-      { value: "3", label: "niveaux" },
+      { value: `${TOTAL_QUESTIONS}`, label: "questions" },
+      { value: `${TOTAL_MODULES}`, label: "thèmes du programme" },
+      { value: `${LEVELS.length}`, label: "niveaux" },
       { value: "0", label: "compte requis" },
     ],
     features: {
@@ -289,7 +290,7 @@ export const SITE_CONTENT = {
         },
         {
           q: "Combien y a-t-il de questions ?",
-          a: "349 questions réparties sur 7 thèmes et 3 niveaux : tronc commun, 1re et 2e année du baccalauréat.",
+          a: "${TOTAL_QUESTIONS} questions réparties sur ${TOTAL_MODULES} thèmes et ${LEVELS.length} niveaux : tronc commun, 1re et 2e année du baccalauréat.",
         },
         {
           q: "Le quiz est-il en arabe ?",
@@ -326,7 +327,7 @@ export const SITE_CONTENT = {
     meta: {
       title: "Philosophy Quiz for the Moroccan Baccalaureate (2BAC)",
       description:
-        "Free, open-source philosophy revision for Moroccan Baccalaureate students: 349 interactive questions across 7 themes and 3 levels, with instant feedback and mistake review. No account, works offline.",
+        "Free, open-source philosophy revision for Moroccan Baccalaureate students: ${TOTAL_QUESTIONS} interactive questions across ${TOTAL_MODULES} themes and ${LEVELS.length} levels, with instant feedback and mistake review. No account, works offline.",
       keywords: [
         "philosophy quiz morocco",
         "2 bac philosophy",
@@ -343,17 +344,17 @@ export const SITE_CONTENT = {
     hero: {
       eyebrow: "Free · open source · no account",
       title: "Philosophy revision, one question at a time.",
-      titleLine2: "7 themes · 3 levels · free",
+      titleLine2: `${TOTAL_MODULES} themes · ${LEVELS.length} levels · free`,
       subtitle:
-        "349 interactive questions covering the 7 themes of the Moroccan philosophy curriculum, across 3 school levels. Instant feedback, point streaks and a mistake review after every quiz.",
+        "${TOTAL_QUESTIONS} interactive questions covering the ${TOTAL_MODULES} themes of the Moroccan philosophy curriculum, across ${LEVELS.length} school levels. Instant feedback, point streaks and a mistake review after every quiz.",
       primaryCta: "Start the quiz",
       secondaryCta: "Explore the themes",
       note: "The quiz interface and questions are in Arabic, the language of philosophy teaching in Morocco. This page explains the tool in English.",
     },
     stats: [
-      { value: "349", label: "questions" },
-      { value: "7", label: "curriculum themes" },
-      { value: "3", label: "school levels" },
+      { value: `${TOTAL_QUESTIONS}`, label: "questions" },
+      { value: `${TOTAL_MODULES}`, label: "curriculum themes" },
+      { value: `${LEVELS.length}`, label: "school levels" },
       { value: "0", label: "accounts needed" },
     ],
     features: {
@@ -423,7 +424,7 @@ export const SITE_CONTENT = {
         },
         {
           q: "How many questions are there?",
-          a: "349 questions across 7 themes and 3 levels: common core, 11th grade and 12th grade.",
+          a: "${TOTAL_QUESTIONS} questions across ${TOTAL_MODULES} themes and ${LEVELS.length} levels: common core, 11th grade and 12th grade.",
         },
         {
           q: "Is the quiz in Arabic?",

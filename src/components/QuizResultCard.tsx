@@ -42,7 +42,7 @@ export function QuizResultCard({
   const skipped = result.reviewItems.filter(
     (item) => item.selectedAnswer === null,
   );
-  const answered = result.reviewItems.length;
+  const answered = result.answered;
   const unanswered = Math.max(0, result.total - answered);
   const finishedAll = answered >= result.total;
   const title = result.moduleTitle ?? "اختبار الفلسفة";

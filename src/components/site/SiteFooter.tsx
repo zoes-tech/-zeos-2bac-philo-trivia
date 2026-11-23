@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Github, Heart } from "lucide-react";
 import { SITE_CONTENT } from "@/i18n/site-content";
-import { LOCALE_CONFIG, LOCALE_LABEL, LOCALES, localePath, type Locale } from "@/i18n/locales";
+import type { Locale } from "@/i18n/locales";
+import { LocaleSwitcher } from "@/components/site/LocaleSwitcher";
 import { SITE } from "@/lib/site";
 
 export function SiteFooter({ locale }: { locale: Locale }) {
@@ -35,23 +35,11 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <span>{SITE.brand}</span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs">
-          {LOCALES.map((item) => (
-            <Link
-              key={item}
-              href={localePath(item)}
-              hrefLang={LOCALE_CONFIG[item].hreflang}
-              aria-current={item === locale ? "page" : undefined}
-              className={
-                item === locale
-                  ? "font-bold text-cyan-300"
-                  : "transition-colors hover:text-white"
-              }
-            >
-              {LOCALE_LABEL[item]}
-            </Link>
-          ))}
-        </div>
+        <LocaleSwitcher
+          locale={locale}
+          label={SITE_CONTENT[locale].chrome.nav.language}
+          variant="full"
+        />
       </div>
     </footer>
   );

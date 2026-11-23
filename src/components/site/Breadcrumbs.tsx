@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Crumb } from "@/lib/jsonld";
+import type { Crumb } from "@/lib/breadcrumbs";
 
 export function Breadcrumbs({
   items,

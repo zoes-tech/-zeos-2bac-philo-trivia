@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Flame, Trophy, Zap } from "lucide-react";
 import { cn, shuffleArray } from "@/lib/utils";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -10,33 +9,21 @@ import { QuizTimer } from "@/components/game/quiz/QuizTimer";
 import { AnswerOptions } from "@/components/game/quiz/AnswerOptions";
 import { ConceptFeedback } from "@/components/game/quiz/ConceptFeedback";
 import type { QuizMode, QuizQuestion, QuizReviewItem } from "@/types/quiz";
-import {
-  calculateStreakMultiplier,
-  getRankInfo,
-  type AnswerScoreBreakdown,
-} from "@/lib/scoring";
-import { useScoreAnimation, useStreakAnimation } from "@/hooks/use-animations";
-import {
-  BASE_TIME_LIMIT,
-  NEXT_DELAY_MS,
-  TIME_BONUS_SECONDS,
-} from "@/lib/quiz-rules";
-import { useGameStore } from "@/store/useStore";
+import type { AnswerScoreBreakdown } from "@/lib/scoring";
+import { NEXT_DELAY_MS, TIME_BONUS_SECONDS } from "@/lib/quiz-rules";
 
 interface QuizCardProps {
   question: QuizQuestion;
-  mode?: QuizMode;
+  mode: QuizMode;
   onAnswer: (
     answer: QuizReviewItem,
     timeTaken?: number,
   ) => AnswerScoreBreakdown | null;
-  /** Called once, ~1.4s after an answer, so the parent can advance. */
-  onNext?: () => void;
-  currentIndex?: number;
-  total?: number;
-  score?: number;
-  category?: string;
-  timeLimit?: number;
+  onNext: () => void;
+  currentIndex: number;
+  total: number;
+  score: number;
+  timeLimit: number;
 }
 
 /**
@@ -46,14 +33,13 @@ interface QuizCardProps {
  */
 export function QuizCard({
   question,
-  mode = "timed",
+  mode,
   onAnswer,
   onNext,
   currentIndex,
   total,
   score,
-  category,
-  timeLimit = BASE_TIME_LIMIT,
+  timeLimit,
 }: QuizCardProps) {
   const timed = mode === "timed";
 
@@ -68,25 +54,22 @@ export function QuizCard({
   const answeredRef = useRef(false);
   const nextTimeoutRef = useRef<number | null>(null);
 
-  const shuffledOptions = useMemo(
-    () => shuffleArray(question.options),
+  const shuffled = useMemo(
+    () =>
+      shuffleArray(
+        question.options.map((text, index) => ({ text, index })),
+      ),
     [question],
   );
+  const shuffledOptions = useMemo(
+    () => shuffled.map((option) => option.text),
+    [shuffled],
+  );
   const shuffledCorrectIndex = useMemo(
-    () =>
-      shuffledOptions.findIndex(
-        (option) => option === question.options[question.correctAnswer],
-      ),
-    [question, shuffledOptions],
+    () => shuffled.findIndex((option) => option.index === question.correctAnswer),
+    [shuffled, question.correctAnswer],
   );
 
-  const currentStreak = useGameStore((state) => state.currentStreak);
-  const points = useGameStore((state) => state.points);
-  const multiplier = calculateStreakMultiplier(currentStreak);
-  const isGodMode = currentStreak >= 10;
-  const rank = getRankInfo(points);
-  const displayScore = useScoreAnimation(score || 0);
-  const { displayStreak, isPopping } = useStreakAnimation(currentStreak);
 
   // Refs are initialised in an effect: Date.now() is impure and must not run
   // during render (the component remounts per question via `key`).
@@ -112,7 +95,7 @@ export function QuizCard({
 
   const scheduleNext = useCallback(() => {
     if (nextTimeoutRef.current) window.clearTimeout(nextTimeoutRef.current);
-    nextTimeoutRef.current = window.setTimeout(() => onNext?.(), NEXT_DELAY_MS);
+    nextTimeoutRef.current = window.setTimeout(() => onNext(), NEXT_DELAY_MS);
   }, [onNext]);
 
   useEffect(
@@ -164,7 +147,7 @@ export function QuizCard({
 
   const handleSubmit = useCallback(() => {
     if (isSubmitted) {
-      if (selectedOption !== shuffledCorrectIndex) onNext?.();
+      if (selectedOption !== shuffledCorrectIndex) onNext();
       return;
     }
     if (selectedOption === null) return;
@@ -183,7 +166,6 @@ export function QuizCard({
       setEarnedPoints(breakdown?.totalPoints ?? 0);
       if (timed) {
         deadlineRef.current += TIME_BONUS_SECONDS * 1000;
-        setTimeLeft((prev) => prev + TIME_BONUS_SECONDS);
       }
     } else {
       setEarnedPoints(0);
@@ -252,10 +234,7 @@ export function QuizCard({
 
   const isCorrectAnswer = selectedOption === shuffledCorrectIndex;
   const showNext = isSubmitted && !isCorrectAnswer;
-  const progress =
-    currentIndex !== undefined && total
-      ? Math.round(((currentIndex + 1) / total) * 100)
-      : null;
+  const progress = Math.round(((currentIndex + 1) / total) * 100);
 
   return (
     <GlassCard
@@ -263,9 +242,8 @@ export function QuizCard({
       hoverEffect={false}
     >
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        {progress !== null && (
-          <div
-            role="progressbar"
+        <div
+          role="progressbar"
             aria-label="تقدم الاختبار"
             aria-valuemin={0}
             aria-valuemax={100}
@@ -275,74 +253,15 @@ export function QuizCard({
             <div
               className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all"
               style={{ width: `${progress}%` }}
-            />
-          </div>
-        )}
-
-        {currentIndex !== undefined && total !== undefined && (
-          <p className="mb-4 text-center text-sm text-gray-400">
-            س {currentIndex + 1} / {total} | {category} | الإجابات الصحيحة:{" "}
-            {displayScore}
-          </p>
-        )}
-
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <motion.div
-              animate={isPopping ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-              transition={{ duration: 0.3 }}
-              className={cn(
-                "flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold",
-                currentStreak >= 10
-                  ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50"
-                  : currentStreak >= 5
-                    ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/50"
-                    : currentStreak >= 3
-                      ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/50"
-                      : "bg-gray-700 text-gray-300",
-              )}
-            >
-              <Flame
-                aria-hidden="true"
-                className={cn("h-4 w-4", currentStreak >= 3 && "animate-pulse")}
-              />
-              <span>{displayStreak}</span>
-            </motion.div>
-            {multiplier > 1 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/20 px-2 py-1 text-xs font-bold text-cyan-300"
-              >
-                <Zap aria-hidden="true" className="h-3 w-3" />
-                <span>x{multiplier.toFixed(1)}</span>
-              </motion.div>
-            )}
-          </div>
-          <div className="flex items-center gap-1 text-xs text-gray-400">
-            <Trophy aria-hidden="true" className="h-3 w-3" />
-            <span>
-              {rank.emoji} {rank.rank}
-            </span>
-          </div>
+          />
         </div>
 
-        <QuizTimer timed={timed} timeLeft={timeLeft} timeLimit={timeLimit} />
+        <p className="mb-4 text-center text-sm text-gray-400">
+          س {currentIndex + 1} / {total} | {question.category} | الإجابات
+          الصحيحة: {score}
+        </p>
 
-        <AnimatePresence>
-          {isGodMode && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mb-4 text-center"
-            >
-              <div className="inline-block rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-purple-500/50">
-                🔥 نمط الحكيم مفعل! 🔥
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <QuizTimer timed={timed} timeLeft={timeLeft} timeLimit={timeLimit} />
 
         <h3 className="mb-8 text-center text-xl font-bold leading-relaxed text-white drop-shadow-md">
           {question.question}
@@ -374,7 +293,7 @@ export function QuizCard({
 
         <div className="mt-8 flex gap-2">
           <LiquidButton
-            onClick={showNext ? () => onNext?.() : handleSubmit}
+            onClick={showNext ? () => onNext() : handleSubmit}
             disabled={!showNext && (selectedOption === null || isSubmitted)}
             className={cn(
               "flex-1",

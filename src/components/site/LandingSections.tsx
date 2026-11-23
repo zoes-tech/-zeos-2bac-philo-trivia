@@ -11,10 +11,10 @@ import {
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { LEVEL_COPY, MODULE_COPY } from "@/i18n/curriculum-copy";
+import { getLevelCopy, getModuleCopy } from "@/i18n/curriculum-copy";
 import { questionCountLabel } from "@/i18n/labels";
 import type { SiteContent } from "@/i18n/site-content";
-import type { Locale } from "@/i18n/locales";
+import { MODULE_PAGE_LOCALES, type Locale } from "@/i18n/locales";
 import { LEVELS, MODULES_BY_LEVEL, modulePath } from "@/lib/curriculum";
 
 const FEATURE_ICONS: LucideIcon[] = [
@@ -140,8 +140,6 @@ export function CurriculumList({
   content: SiteContent;
   locale: Locale;
 }) {
-  const levelCopy = LEVEL_COPY[locale];
-  const moduleCopy = MODULE_COPY[locale];
 
   return (
     <section
@@ -160,15 +158,15 @@ export function CurriculumList({
           <div key={level.id}>
             <h3 className="flex items-center gap-2 font-serif text-lg font-bold text-cyan-300">
               <BookOpen aria-hidden="true" className="h-4 w-4" />
-              {levelCopy[level.id].title}
+              {getLevelCopy(locale, level.id).title}
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-              {levelCopy[level.id].description}
+              {getLevelCopy(locale, level.id).description}
             </p>
 
             <ul className="mt-4 space-y-3">
               {MODULES_BY_LEVEL[level.id].map((module) => {
-                const copy = moduleCopy[module.id];
+                const copy = getModuleCopy(locale, module);
                 const count = module.quiz?.length ?? 0;
                 return (
                   <li
@@ -177,12 +175,12 @@ export function CurriculumList({
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <h4 className="text-sm font-bold text-white">
-                        {locale === "ar" ? (
+                        {MODULE_PAGE_LOCALES.includes(locale) ? (
                           <Link
                             href={modulePath(level.id, module.id)}
                             className="transition-colors hover:text-cyan-300"
                           >
-                            {copy?.title ?? module.title}
+                            {copy.title}
                           </Link>
                         ) : (
                           (copy?.title ?? module.title)
@@ -193,9 +191,9 @@ export function CurriculumList({
                       </span>
                     </div>
                     <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
-                      {copy?.description ?? module.description}
+                      {copy.description}
                     </p>
-                    {locale === "ar" && (
+                    {MODULE_PAGE_LOCALES.includes(locale) && (
                       <Link
                         href={modulePath(level.id, module.id)}
                         className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-cyan-300 transition-colors hover:text-cyan-200"

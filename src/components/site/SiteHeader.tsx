@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Github } from "lucide-react";
-import { LOCALE_CONFIG, LOCALE_LABEL, LOCALES, localePath, type Locale } from "@/i18n/locales";
+import { localePath, type Locale } from "@/i18n/locales";
+import { LocaleSwitcher } from "@/components/site/LocaleSwitcher";
 import { SITE_CONTENT } from "@/i18n/site-content";
 import { SITE } from "@/lib/site";
-import { cn } from "@/lib/utils";
 
 export function SiteHeader({ locale }: { locale: Locale }) {
   const chrome = SITE_CONTENT[locale].chrome;
@@ -36,13 +36,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         className="flex items-center gap-1 text-sm text-zinc-400"
       >
         <Link
-          href="/#curriculum"
+          href={`${localePath(locale)}#curriculum`}
           className="rounded-lg px-2.5 py-1.5 transition-colors hover:bg-white/5 hover:text-white"
         >
           {nav.curriculum}
         </Link>
         <Link
-          href="/#faq"
+          href={`${localePath(locale)}#faq`}
           className="rounded-lg px-2.5 py-1.5 transition-colors hover:bg-white/5 hover:text-white"
         >
           {nav.faq}
@@ -53,24 +53,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           className="mx-1 hidden h-4 w-px bg-white/10 sm:block"
         />
 
-        <span className="sr-only">{nav.language}</span>
-        {LOCALES.map((item) => (
-          <Link
-            key={item}
-            href={localePath(item)}
-            hrefLang={LOCALE_CONFIG[item].hreflang}
-            aria-current={item === locale ? "page" : undefined}
-            title={LOCALE_LABEL[item]}
-            className={cn(
-              "rounded-lg px-1.5 py-1 text-xs font-bold uppercase tracking-wide transition-colors",
-              item === locale
-                ? "text-cyan-300"
-                : "text-zinc-500 hover:text-white",
-            )}
-          >
-            {item}
-          </Link>
-        ))}
+        <LocaleSwitcher
+          locale={locale}
+          label={nav.language}
+          variant="compact"
+        />
 
         <a
           href={SITE.github}

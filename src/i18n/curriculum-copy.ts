@@ -53,38 +53,7 @@ export const LEVEL_COPY: Record<Locale, LevelCopy> = {
 };
 
 export const MODULE_COPY: Record<Locale, ModuleCopy> = {
-  ar: {
-    "intro-philosophy": {
-      title: "نشأة الفلسفة",
-      description:
-        "من الأسطورة إلى التفكير العقلاني: أولى المفاهيم الفلسفية وأسئلتها.",
-    },
-    humanity: {
-      title: "الإنسان",
-      description: "أبعاد الوجود الإنساني: الوعي، الرغبة، واللغة.",
-    },
-    effectiveness: {
-      title: "الفاعلية والإبداع",
-      description:
-        "علاقة الإنسان بالعالم من خلال التقنية والعلم والعمل.",
-    },
-    "human-condition": {
-      title: "الوضع البشري",
-      description: "الشخص والغير: الهوية، الحرية، والعلاقة بالآخر.",
-    },
-    politics: {
-      title: "السياسة",
-      description: "الدولة، الحق والعدالة، والعنف.",
-    },
-    knowledge: {
-      title: "المعرفة",
-      description: "النظرية والتجربة، الحقيقة، والعلوم.",
-    },
-    morality: {
-      title: "الأخلاق",
-      description: "الواجب، السعادة، والحرية.",
-    },
-  },
+  ar: {},
   fr: {
     "intro-philosophy": {
       title: "Naissance de la philosophie",

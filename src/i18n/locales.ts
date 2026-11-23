@@ -22,6 +22,9 @@ export const LOCALES = CONFIG.map((locale) => locale.id);
 
 const DEFAULT_LOCALE: Locale = "ar";
 
+/** Module detail pages exist only in Arabic today. */
+export const MODULE_PAGE_LOCALES: Locale[] = ["ar"];
+
 export function localePath(locale: Locale): string {
   return LOCALE_CONFIG[locale].path;
 }

@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { getLevelCopy, getModuleCopy } from "@/i18n/curriculum-copy";
-import type { SiteContent } from "@/i18n/site-content";
+import { SITE_CONTENT } from "@/i18n/site-content";
 import {
   HREFLANG_PATHS,
   LOCALE_CONFIG,
+  MODULE_PAGE_LOCALES,
   localePath,
   type Locale,
 } from "@/i18n/locales";
@@ -53,8 +54,8 @@ function buildPageMetadata({
       images: [
         {
           url: SITE.ogImage,
-          width: SITE.ogImageSize.width,
-          height: SITE.ogImageSize.height,
+          width: SITE.ogWidth,
+          height: SITE.ogHeight,
           alt: title,
         },
       ],
@@ -84,10 +85,8 @@ function buildPageMetadata({
   };
 }
 
-export function buildMetadata(
-  locale: Locale,
-  meta: SiteContent["meta"],
-): Metadata {
+export function buildMetadata(locale: Locale): Metadata {
+  const meta = SITE_CONTENT[locale].meta;
   return buildPageMetadata({
     locale,
     path: localePath(locale),
@@ -101,8 +100,8 @@ export function buildMetadata(
 export function buildModuleMetadata(
   level: LevelId,
   module: Module,
-  locale: Locale = "ar",
 ): Metadata {
+  const locale = MODULE_PAGE_LOCALES[0];
   const copy = getModuleCopy(locale, module);
   const levelTitle = getLevelCopy(locale, level).title;
   const path = modulePath(level, module.id);

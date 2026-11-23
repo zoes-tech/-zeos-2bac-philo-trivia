@@ -41,9 +41,20 @@ if (!fs.existsSync(explanationsDir)) {
   process.exit(1);
 }
 
+const explanationFiles = fs
+  .readdirSync(explanationsDir)
+  .filter((file) => file.endsWith(".json"));
+
+const appIndex = fs.readFileSync(
+  path.join(root, "src/lib/explanations.ts"),
+  "utf8",
+);
+const unimported = explanationFiles.filter(
+  (file) => !appIndex.includes(`explanations/${file}`),
+);
+
 const entries = {};
-for (const file of fs.readdirSync(explanationsDir)) {
-  if (!file.endsWith(".json")) continue;
+for (const file of explanationFiles) {
   const parsed = JSON.parse(
     fs.readFileSync(path.join(explanationsDir, file), "utf8"),
   );
@@ -76,7 +87,7 @@ const total = questions.length;
 const covered = total - missing.length;
 
 console.log(
-  `Content check: ${covered}/${total} questions explained, ${orphans.length} orphan keys, ${invalid.length} invalid entries`,
+  `Content check: ${covered}/${total} questions explained, ${orphans.length} orphan keys, ${invalid.length} invalid entries, ${unimported.length} unimported files`,
 );
 
 if (missing.length > 0) {
@@ -95,6 +106,16 @@ if (invalid.length > 0) {
   for (const issue of invalid.slice(0, 20)) console.error(`  - ${issue}`);
 }
 
-if (missing.length > 0 || orphans.length > 0 || invalid.length > 0) {
+if (unimported.length > 0) {
+  console.error("Explanation files exist but are not imported by the app:");
+  for (const file of unimported) console.error(`  - ${file}`);
+}
+
+if (
+  missing.length > 0 ||
+  orphans.length > 0 ||
+  invalid.length > 0 ||
+  unimported.length > 0
+) {
   process.exit(1);
 }

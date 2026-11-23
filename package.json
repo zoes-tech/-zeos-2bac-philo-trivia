@@ -10,9 +10,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/generate-seo.mjs && node scripts/generate-sw.mjs && node scripts/generate-og.mjs out/og.png && node scripts/check-content.mjs",
+    "build": "next build && node scripts/generate-seo.mjs && node scripts/generate-sw.mjs && node scripts/check-content.mjs",
     "preview": "npx --yes serve out",
-    "start": "npx --yes serve out",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "deploy": "wrangler pages deploy out --project-name zoes-philo",

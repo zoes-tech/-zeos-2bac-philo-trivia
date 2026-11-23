@@ -126,7 +126,7 @@ Sitemap: ${siteUrl}/sitemap.xml
 
 const llms = `# ${site.name} — ${site.nameEn}
 
-> Free, open-source philosophy quiz for Moroccan Baccalaureate students. ${questionCount} interactive questions across ${modules.length} curriculum themes and 3 school levels, in Arabic (RTL), with instant feedback, point streaks and a mistake-review card. No account, no tracking cookies; progress is stored locally.
+> Free, open-source philosophy quiz for Moroccan Baccalaureate students. ${questionCount} interactive questions across ${modules.length} curriculum themes and ${levels.length} school levels, in Arabic (RTL), with instant feedback, point streaks and a mistake-review card. No account, no tracking cookies; progress is stored locally.
 
 ## Key facts
 

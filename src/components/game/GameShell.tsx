@@ -5,7 +5,7 @@ import { GameHeader } from "@/components/game/GameHeader";
 import { LevelBrowser } from "@/components/game/LevelBrowser";
 import { QuizSession } from "@/components/game/QuizSession";
 import { QuizResultCard } from "@/components/QuizResultCard";
-import { contentKey } from "@/lib/content-key";
+import { MODULE_QUERY_PARAM, PLAY_ANCHOR } from "@/lib/routes";
 import { useGameStore } from "@/store/useStore";
 
 /**
@@ -21,12 +21,17 @@ export function GameShell() {
     (state) => state.startDailyChallenge,
   );
   const startReview = useGameStore((state) => state.startReview);
+  const startReviewFromResult = useGameStore(
+    (state) => state.startReviewFromResult,
+  );
   const clearLastResult = useGameStore((state) => state.clearLastResult);
   const sectionRef = useRef<HTMLElement>(null);
   const startedAt = attempt?.startedAt;
 
   useEffect(() => {
-    const moduleId = new URLSearchParams(window.location.search).get("module");
+    const moduleId = new URLSearchParams(window.location.search).get(
+      MODULE_QUERY_PARAM,
+    );
     if (!moduleId) return;
 
     if (!useGameStore.getState().currentAttempt) {
@@ -54,17 +59,12 @@ export function GameShell() {
   };
 
   const handleReviewMistakes = () => {
-    if (!lastResult) return;
-
-    const keys = lastResult.reviewItems
-      .filter((item) => !item.isCorrect)
-      .map((item) => contentKey(item.moduleId, item.questionId));
-    if (keys.length > 0) startReview(keys);
+    if (lastResult) startReviewFromResult(lastResult);
   };
 
   return (
     <section
-      id="play"
+      id={PLAY_ANCHOR}
       ref={sectionRef}
       aria-label="الاختبار التفاعلي"
       className="relative z-10 mx-auto w-full max-w-md scroll-mt-4 px-4 pb-6"

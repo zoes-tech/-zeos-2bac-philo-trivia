@@ -1,5 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
 import { MODULE_PAGE_COPY } from "@/i18n/labels";
+import { GENERAL_CATEGORY } from "@/lib/curriculum";
 import { getExplanation } from "@/lib/explanations";
 import type { Question } from "@/types";
 
@@ -18,7 +19,7 @@ export function SampleQuestionCard({
     <article className="glass-panel rounded-2xl p-5">
       <div className="mb-3 flex items-center justify-between gap-3 text-xs text-zinc-500">
         <span>{MODULE_PAGE_COPY.questionOf(index)}</span>
-        <span>{question.category || MODULE_PAGE_COPY.generalCategory}</span>
+        <span>{question.category || GENERAL_CATEGORY}</span>
       </div>
       <h3 className="text-base font-bold leading-relaxed text-white">
         {question.question}

@@ -1,6 +1,5 @@
 import { JsonLd } from "@/components/seo/JsonLd";
 import type { Locale } from "@/i18n/locales";
-import { SITE_CONTENT } from "@/i18n/site-content";
 import type { LevelId } from "@/lib/curriculum";
 import {
   appJsonLd,
@@ -10,12 +9,12 @@ import {
   moduleJsonLd,
   organizationJsonLd,
   websiteJsonLd,
-  type Crumb,
 } from "@/lib/jsonld";
 import type { Module } from "@/types";
+import type { Crumb } from "@/lib/breadcrumbs";
 
 type PageSeoProps =
-  | { locale: Locale; page: "landing"; breadcrumbs?: Crumb[] }
+  | { locale: Locale; page: "landing" }
   | {
       locale: Locale;
       page: "module";
@@ -26,8 +25,6 @@ type PageSeoProps =
 
 /** The single JSON-LD entry point for a page. */
 export function PageSeo(props: PageSeoProps) {
-  const content = SITE_CONTENT[props.locale];
-
   return (
     <>
       <JsonLd data={organizationJsonLd()} />
@@ -35,15 +32,15 @@ export function PageSeo(props: PageSeoProps) {
 
       {props.page === "landing" ? (
         <>
-          <JsonLd data={appJsonLd(props.locale, content)} />
+          <JsonLd data={appJsonLd(props.locale)} />
           <JsonLd data={curriculumJsonLd(props.locale)} />
-          <JsonLd data={faqJsonLd(content)} />
+          <JsonLd data={faqJsonLd(props.locale)} />
         </>
       ) : (
-        <JsonLd data={moduleJsonLd(props.level, props.module, props.locale)} />
+        <JsonLd data={moduleJsonLd(props.level, props.module)} />
       )}
 
-      {props.breadcrumbs && props.breadcrumbs.length > 0 && (
+      {"breadcrumbs" in props && props.breadcrumbs.length > 0 && (
         <JsonLd data={breadcrumbJsonLd(props.breadcrumbs)} />
       )}
     </>

@@ -8,6 +8,9 @@ import type { Module, Question } from "@/types";
 
 export type LevelId = "common-core" | "1st-bac" | "2nd-bac";
 
+/** Label used when a question has no category. */
+export const GENERAL_CATEGORY = "عام";
+
 type LevelConfig = { id: LevelId; slug: string; banks: string[] };
 
 const LEVEL_CONFIG = levelsData as LevelConfig[];
@@ -95,7 +98,7 @@ export function getCategoryCounts(
   const counts = new Map<string, number>();
 
   for (const question of module.quiz ?? []) {
-    const name = question.category?.trim() || "بدون تصنيف";
+    const name = question.category?.trim() || GENERAL_CATEGORY;
     counts.set(name, (counts.get(name) ?? 0) + 1);
   }
 
@@ -122,6 +125,5 @@ export const MODULE_PAGES = LEVELS.flatMap((level) =>
     level: level.id,
     levelSlug: LEVEL_SLUG[level.id],
     moduleId: module.id,
-    path: modulePath(level.id, module.id),
   })),
 );

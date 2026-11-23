@@ -14,15 +14,17 @@ import type { Philosopher } from "@/types";
 
 export function LevelBrowser() {
   const currentLevel = useGameStore((state) => state.currentLevel);
-  const unlockedPhilosophers = useGameStore(
-    (state) => state.unlockedPhilosophers,
-  );
+  const completedModules = useGameStore((state) => state.completedModules);
   const startModuleQuiz = useGameStore((state) => state.startModuleQuiz);
   const [viewingPhilosopher, setViewingPhilosopher] =
     useState<Philosopher | null>(null);
 
   const levelCopy = getLevelCopy("ar", currentLevel);
   const modules = MODULES_BY_LEVEL[currentLevel];
+  const unlocked = ALL_MODULES.filter(
+    (module) =>
+      module.philosopher && completedModules.includes(module.id),
+  );
 
   return (
     <div className="space-y-8">
@@ -72,17 +74,13 @@ export function LevelBrowser() {
         </div>
       </section>
 
-      {unlockedPhilosophers.length > 0 && (
+      {unlocked.length > 0 && (
         <section>
           <h2 className="mb-4 font-serif text-xl font-bold text-purple-400">
             الفلاسفة المكتشفون
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            {ALL_MODULES.filter(
-              (module) =>
-                module.philosopher &&
-                unlockedPhilosophers.includes(module.philosopher.id),
-            ).map((module) => (
+            {unlocked.map((module) => (
               <motion.button
                 key={module.philosopher!.id}
                 onClick={() => setViewingPhilosopher(module.philosopher!)}

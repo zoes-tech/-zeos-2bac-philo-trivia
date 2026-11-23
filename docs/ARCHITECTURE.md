@@ -35,25 +35,30 @@ does a full page load, which is fine (and cacheable) for static content.
 
 ## Rendering model
 
-- `src/app/(ar)/page.tsx` is a **server component**. It renders the hero,
-  stats, features, curriculum list, how-it-works, FAQ and footer as static HTML.
-- `GameShell` (`src/components/game/GameShell.tsx`) is the only client island
-  on the home page. It owns the quiz screens, the level map and the result card.
-- `RetentionDashboard` is a second lazy island, above the quiz. It owns the
-  daily challenge, mistake review, resume card and streak. It is loaded with
-  `ssr: false` so the store and the question bank do not enter the initial
-  bundle; the server HTML reserves a skeleton with the same height.
-- Theme pages (`/[level]/[module]/`) are **fully server-rendered**. They reuse
-  the JSON data to publish an overview, the per-concept question distribution,
-  four worked examples and internal links. No client providers are mounted
-  there, so they ship only the Next/React baseline.
-- `?module=<id>` on the home page deep-links into a quiz; theme pages use it for
-  their CTA, and it makes shared links open the right module.
-- `RootShell` adds the shared `<html>/<body>`, providers, background orbs,
-  skip link, optional analytics and the service-worker registration.
-- `AppProviders` wraps `MotionConfig reducedMotion="user"` and `ScoringProvider`.
-  It is mounted on the home page only, around `GameIsland`, not in the locale
-  layout, so theme pages do not pay for Framer Motion or the scoring context.
+- `src/app/(ar)/page.tsx` is a thin server component: it renders the shared
+  `LandingPage` with the two client islands as `interactive`.
+- `LandingPage` (`src/components/site/LandingPage.tsx`) is used by all three
+  locales; it renders the hero, copy sections, optional stats and the optional
+  interactive block. The Arabic page disables stats because the dashboard
+  replaces them.
+- `RootShell` owns `<html>/<body>`, the skip link, `SiteHeader`, `<main
+  id="main">`, `SiteFooter`, `MotionProvider`, background orbs, optional
+  analytics and service-worker registration. Pages only render their own
+  content, so no page can forget the chrome or the skip target.
+- `PageSeo` is the single JSON-LD entry point; `buildPageMetadata` is the single
+  metadata builder. Breadcrumbs come from `moduleCrumbs` and are rendered both
+  as `<nav>` and `BreadcrumbList`.
+- `GameShell` composes `GameHeader`, `QuizSession`, `QuizResultCard` and
+  `LevelBrowser`. State and transitions live in the store; the components
+  render.
+- `RetentionDashboard` is a lazy island above the quiz. It is loaded with
+  `ssr: false` so the store and question bank do not enter the initial bundle;
+  the server HTML reserves a skeleton.
+- Theme pages (`/[level]/[module]/`) are fully server-rendered: overview,
+  question distribution, four worked examples with explanations and related
+  modules. They pass no client providers.
+- `?module=<id>` opens a module quiz from a theme page; `routes.ts` owns the
+  query key and anchors.
 
 Keeping marketing copy server-rendered is what makes the page indexable: the
 Arabic home page ships ~500 words of visible text plus five JSON-LD graphs,
@@ -61,49 +66,28 @@ instead of an empty client shell.
 
 ## State
 
-Two stores, on purpose:
+One persisted store, `useGameStore` (`src/store/useStore.ts`):
 
-1. **`ScoringProvider`** (`src/contexts/ScoringProvider.tsx`) — points, answer
-   streak, rank and multiplier for the current session; persisted under
-   `zeos-stats`. It deliberately does **not** track days.
-2. **`useGameStore`** (`src/store/useStore.ts`) — everything durable: level,
-   unlocked philosophers, completed quizzes, **daily streak**, **mistake bank**,
-   **recent results**, **daily challenge result**, quiz mode and the
-   **in-progress quiz**. Persisted with Zustand under `zeos-game-storage`.
+- `points`, `currentStreak`, `bestStreak`, lifetime answered/correct counters;
+- level, completed modules, **daily streak**, **mistake bank**, daily result;
+- quiz mode and the **in-progress attempt**;
+- `lastQuizResult` and onboarding dismissal.
 
-Daily activity is owned by the game store because it must survive without the
-quiz being mounted. `answerQuiz` touches the day once (local date, not UTC) and
-increments `dailyStreak` only when the previous activity was yesterday.
+`submitAnswer` applies the pure scoring helper, updates points/streak/mistakes
+and the attempt. `advanceOrEnd` moves to the next question or ends the attempt.
+`endAttempt` computes the result (accuracy over **answered** questions), marks
+the module complete and records the daily result. A daily streak advances once
+per local day, on the first answer.
 
-The old `progressStore.ts` duplicated both and was never imported; it was
-removed. Storage keys keep the historical `zeos-` prefix so returning users do
-not lose progress. Do not rename them without a migration.
+The old `ScoringProvider`, the `xp` currency and the duplicate
+`progressStore.ts` are gone. Legacy `zeos-stats` and the v1 game-store shape are
+normalized in one `merge`; storage keys keep the historical `zeos-` prefix.
+`unlockedPhilosophers` is derived from completed modules, not persisted.
 
-`QuizCard` is mounted with `key={moduleId-index-mode}` so each question (and a
-mode switch) gets a fresh component. That replaced an effect-based reset and avoids cascading renders.
-Answering schedules exactly one advance (1.4 s), which fixes the old
-double-advance race between the page-level timeout and the manual "next" button.
-
-## Retention mechanics
-
-- **Daily challenge** (`src/lib/daily.ts`): a seeded PRNG builds the same ten
-  questions for everyone on a given local date, drawing round-robin from the
-  three levels. No server, no leaderboard, no coordination.
-- **Mistake bank**: keys are `moduleId:questionId` because question ids repeat
-  across modules. Wrong answers are added; correct answers remove the key.
-  `mistakeCounts` tracks repetitions, and the review quiz opens with the
-  most-missed questions first.
-- **Resume**: `currentQuiz` is part of the persisted state, including the
-  question list, index and review items. Reloading restores it and shows a
-  "resumed" banner. The timer restarts for the current question.
-- **Study mode**: no countdown and no speed bonus; `quizMode` persists.
-- **Mistake pacing**: a correct answer auto-advances after 1.4 s; a wrong or
-  skipped answer stays on screen until "التالي". That is deliberate: the
-  correct answer and the related concept note need to be readable.
-- **Onboarding**: a dismissible panel for first-time users, stored under
-  `zoes-onboarding`. It is not a modal and never blocks the quiz.
-- **Streak**: one increment per local day, regardless of how many quizzes were
-  played. Missing a day resets to 1 on the next activity.
+`QuizCard` is mounted with `key={moduleId-index}` and resets its own state per
+question. Correct answers auto-advance after 1.4 s; wrong/skipped answers wait
+for "التالي" so the concept note and explanation can be read. Time limits and
+the bonus live in `quiz-rules.ts`.
 
 ## Static-export constraints
 
@@ -122,15 +106,16 @@ These are intentional, not accidental:
 
 ## PWA and offline behaviour
 
-`public/sw.js` is a small hand-written worker (no Workbox build step):
+`out/sw.js` is generated at build from `scripts/sw.template.js`:
 
-- `_next/static/*` → cache-first with an immutable cache.
-- navigations → network-first, falling back to the cached page, then `/`.
-- other same-origin GETs → stale-while-revalidate.
+- the precache list comes from `locales.json`;
+- the cache version comes from the commit SHA (or a local timestamp);
+- navigations fall back to the same locale's cached page, then `/`;
+- `_next/static/*` is cache-first; other same-origin GETs use
+  stale-while-revalidate.
 
-Bump `CACHE_VERSION` when cached HTML changes meaningfully. The worker is
-registered only in production and failures are swallowed — offline support is an
-enhancement, never a blocker.
+The generated worker is registered only in production. There is no manual
+`CACHE_VERSION` bump and no Workbox artifact.
 
 ## Fonts
 

@@ -41,7 +41,6 @@ export interface QuizResult {
   answered: number;
   accuracy: number;
   pointsEarned: number;
-  completedAt: string;
   reviewItems: QuizReviewItem[];
 }
 

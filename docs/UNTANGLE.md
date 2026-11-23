@@ -5,6 +5,35 @@ the same time: rationale and external-constraint comments stay, decorative ones
 go. There are no tests in the repo, so the skill's test-pruning step does not
 apply.
 
+## Status (2026-11-23)
+
+Implemented in this pass:
+
+- one level/locale/site manifest, consumed by the app and the scripts;
+- one page composition, metadata builder, JSON-LD path and breadcrumb model;
+- one quiz store and one score; the second score system, `xp` and the provider
+  are gone; legacy state is normalized in one place;
+- one start path per quiz kind, one submit/advance path, one attempt object;
+- game/page god components split; copy split into site/curriculum/labels;
+- dead components, fields, actions and exports removed;
+- manifest, service worker and OG ownership resolved (OG is a committed asset;
+  manifest and SW are generated);
+- checks: level/OG counts derived, explanation files must be imported, dialogs
+  share one focus/escape/scroll implementation.
+
+Deliberately deferred (documented, not hidden):
+
+- a shared `scripts/lib` manifest module: the scripts already read the JSON
+  manifests; the remaining duplication is URL/env/count helpers and is low-risk;
+- the static curriculum import map beside `levels.json` (Next needs static
+  imports; a runtime guard catches a missing bank);
+- feature icon keys in copy (currently positional; six items, three locales);
+- a typed `partialize` pick, a `QUIZ_KINDS` table and versioned Zustand
+  migrations (current merge works and is covered by the legacy test);
+- feedback for an unknown `?module=` id (silent no-op today);
+- `Cta`/`Section`/surface primitives, intentionally left for the UI/UX pass;
+- a nonce-based CSP (impossible with static export; documented in SECURITY.md).
+
 ## Problems (grouped)
 
 ### 1. The same curriculum facts are written in four places

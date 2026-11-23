@@ -1,7 +1,7 @@
 import { getLevelCopy, getModuleCopy } from "@/i18n/curriculum-copy";
 import { questionCountLabel } from "@/i18n/labels";
-import type { SiteContent } from "@/i18n/site-content";
-import { HTML_LANG, type Locale } from "@/i18n/locales";
+import { SITE_CONTENT } from "@/i18n/site-content";
+import { HTML_LANG, MODULE_PAGE_LOCALES, type Locale } from "@/i18n/locales";
 import {
   ALL_MODULES,
   LEVELS,
@@ -15,7 +15,7 @@ import { SITE } from "@/lib/site";
 
 type JsonLd = Record<string, unknown>;
 
-export type Crumb = { name: string; href: string };
+import type { Crumb } from "@/lib/breadcrumbs";
 
 export function organizationJsonLd(): JsonLd {
   return {
@@ -42,7 +42,8 @@ export function websiteJsonLd(locale: Locale): JsonLd {
   };
 }
 
-export function appJsonLd(locale: Locale, content: SiteContent): JsonLd {
+export function appJsonLd(locale: Locale): JsonLd {
+  const content = SITE_CONTENT[locale];
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -127,7 +128,8 @@ export function curriculumJsonLd(locale: Locale): JsonLd {
   };
 }
 
-export function faqJsonLd(content: SiteContent): JsonLd {
+export function faqJsonLd(locale: Locale): JsonLd {
+  const content = SITE_CONTENT[locale];
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -154,13 +156,9 @@ export function breadcrumbJsonLd(items: Crumb[]): JsonLd {
   };
 }
 
-export function moduleJsonLd(
-  level: LevelId,
-  module: Module,
-  locale: Locale = "ar",
-): JsonLd {
+export function moduleJsonLd(level: LevelId, module: Module): JsonLd {
   return {
     "@context": "https://schema.org",
-    ...moduleEntity(locale, level, module),
+    ...moduleEntity(MODULE_PAGE_LOCALES[0], level, module),
   };
 }

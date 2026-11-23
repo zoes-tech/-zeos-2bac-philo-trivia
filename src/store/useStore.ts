@@ -9,6 +9,7 @@ import {
 } from "@/lib/daily";
 import { questionsForKeys } from "@/lib/questions";
 import {
+  accuracyOf,
   calculateAnswerScore,
   type AnswerScoreBreakdown,
 } from "@/lib/scoring";
@@ -33,9 +34,7 @@ interface GameState {
   dailyStreak: number;
   lastActiveDate: string | null;
   completedModules: string[];
-  unlockedPhilosophers: string[];
   mistakes: MistakeMap;
-  recentResults: QuizResult[];
   lastQuizResult: QuizResult | null;
   dailyResult: DailyResult | null;
   currentAttempt: CurrentAttempt | null;
@@ -48,6 +47,7 @@ interface GameState {
   startModuleQuiz: (moduleId: string) => void;
   startDailyChallenge: () => void;
   startReview: (keys?: string[]) => void;
+  startReviewFromResult: (result: QuizResult) => void;
   submitAnswer: (
     answer: QuizReviewItem,
     timeTaken?: number,
@@ -56,10 +56,10 @@ interface GameState {
   endAttempt: () => void;
   discardAttempt: () => void;
   clearLastResult: () => void;
-  resetProgress: () => void;
 }
 
 const REVIEW_TITLE = "مراجعة الأخطاء";
+const MAX_REVIEW = 20;
 
 function readLegacyScore() {
   if (typeof window === "undefined") {
@@ -101,9 +101,7 @@ const INITIAL_DATA = {
   dailyStreak: 0,
   lastActiveDate: null,
   completedModules: [],
-  unlockedPhilosophers: [],
   mistakes: {},
-  recentResults: [],
   lastQuizResult: null,
   dailyResult: null,
   currentAttempt: null,
@@ -148,10 +146,8 @@ function normalizeResult(value: unknown): QuizResult | null {
     total: result.total ?? 0,
     answered,
     accuracy:
-      result.accuracy ??
-      (answered > 0 ? Math.round(((result.correct ?? 0) / answered) * 100) : 0),
+      result.accuracy ?? accuracyOf(result.correct ?? 0, answered),
     pointsEarned: result.pointsEarned ?? 0,
-    completedAt: result.completedAt ?? new Date().toISOString(),
     reviewItems: result.reviewItems ?? [],
   };
 }
@@ -249,7 +245,19 @@ export const useGameStore = create<GameState>()(
               .sort(([, a], [, b]) => b.count - a.count)
               .map(([key]) => key);
 
-          begin("review", "review", REVIEW_TITLE, questionsForKeys(selected));
+          begin(
+            "review",
+            "review",
+            REVIEW_TITLE,
+            questionsForKeys(selected.slice(0, MAX_REVIEW)),
+          );
+        },
+
+        startReviewFromResult: (result) => {
+          const keys = result.reviewItems
+            .filter((item) => !item.isCorrect)
+            .map((item) => contentKey(item.moduleId, item.questionId));
+          get().startReview(keys);
         },
 
         submitAnswer: (answer, timeTaken) => {
@@ -333,10 +341,8 @@ export const useGameStore = create<GameState>()(
             correct: attempt.score,
             total: attempt.total,
             answered,
-            accuracy:
-              answered > 0 ? Math.round((attempt.score / answered) * 100) : 0,
+            accuracy: accuracyOf(attempt.score, answered),
             pointsEarned: attempt.points,
-            completedAt: new Date().toISOString(),
             reviewItems: attempt.reviewItems,
           };
 
@@ -347,21 +353,9 @@ export const useGameStore = create<GameState>()(
               ? [...state.completedModules, attempt.moduleId]
               : state.completedModules;
 
-          const owner =
-            attempt.kind === "module"
-              ? getModuleById(attempt.moduleId)
-              : undefined;
-          const unlockedPhilosophers =
-            owner?.philosopher &&
-            !state.unlockedPhilosophers.includes(owner.philosopher.id)
-              ? [...state.unlockedPhilosophers, owner.philosopher.id]
-              : state.unlockedPhilosophers;
-
           set({
             completedModules,
-            unlockedPhilosophers,
             lastQuizResult: result,
-            recentResults: [result, ...state.recentResults].slice(0, 20),
             dailyResult:
               attempt.kind === "daily"
                 ? {
@@ -376,13 +370,6 @@ export const useGameStore = create<GameState>()(
 
         discardAttempt: () => set({ currentAttempt: null }),
         clearLastResult: () => set({ lastQuizResult: null }),
-        resetProgress: () =>
-          set({
-            ...INITIAL_DATA,
-            points: 0,
-            currentStreak: 0,
-            bestStreak: 0,
-          }),
       };
     },
     {
@@ -398,9 +385,7 @@ export const useGameStore = create<GameState>()(
         dailyStreak: state.dailyStreak,
         lastActiveDate: state.lastActiveDate,
         completedModules: state.completedModules,
-        unlockedPhilosophers: state.unlockedPhilosophers,
         mistakes: state.mistakes,
-        recentResults: state.recentResults,
         lastQuizResult: state.lastQuizResult,
         dailyResult: state.dailyResult,
         currentAttempt: state.currentAttempt,
@@ -416,6 +401,7 @@ export const useGameStore = create<GameState>()(
         delete rest.mistakeCounts;
         delete rest.completedQuizzes;
         delete rest.currentQuiz;
+        delete rest.unlockedPhilosophers;
 
         return {
           ...current,

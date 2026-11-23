@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import "../globals.css";
 import { RootShell } from "@/components/site/RootShell";
-import { SITE_CONTENT } from "@/i18n/site-content";
 import { buildMetadata, siteViewport } from "@/lib/seo";
 
-export const metadata: Metadata = buildMetadata("ar", SITE_CONTENT.ar.meta);
+export const metadata: Metadata = buildMetadata("ar");
 export const viewport = siteViewport;
 
 export default function ArabicLayout({

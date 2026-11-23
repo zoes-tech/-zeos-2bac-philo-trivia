@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useId, useRef } from "react";
+import { useDialog } from "@/hooks/use-dialog";
 import { motion } from "framer-motion";
 import { X, Quote, User } from "lucide-react";
 import { LiquidButton } from "@/components/ui/LiquidButton";
@@ -18,23 +19,7 @@ export function PhilosopherProfile({
 }: PhilosopherProfileProps) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    closeRef.current?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [onClose]);
+  useDialog(true, onClose, closeRef);
 
   return (
     <motion.div

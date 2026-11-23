@@ -24,7 +24,7 @@ export async function generateMetadata({
   const { level, module: moduleId } = await params;
   const found = findModule(level, moduleId);
   if (!found) return {};
-  return buildModuleMetadata(found.level, found.module, "ar");
+  return buildModuleMetadata(found.level, found.module);
 }
 
 export default async function CurriculumModulePage({
@@ -36,5 +36,5 @@ export default async function CurriculumModulePage({
   const found = findModule(level, moduleId);
   if (!found) notFound();
 
-  return <ModulePage level={found.level} module={found.module} locale="ar" />;
+  return <ModulePage level={found.level} module={found.module} />;
 }

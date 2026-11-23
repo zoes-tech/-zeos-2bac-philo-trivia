@@ -17,7 +17,11 @@ export function ConceptFeedback({
   const owner = getModuleById(moduleId);
   const concept =
     owner?.concepts.find((item) => item.name === category) ??
-    (category ? undefined : owner?.concepts[0]);
+    owner?.concepts.find(
+      (item) =>
+        category &&
+        (item.name.includes(category) || category.includes(item.name)),
+    );
   const note =
     concept && concept.description && concept.description !== concept.name
       ? concept.description

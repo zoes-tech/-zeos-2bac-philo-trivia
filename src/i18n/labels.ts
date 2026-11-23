@@ -7,7 +7,6 @@ export function questionCountLabel(locale: Locale, count: number): string {
     if (count <= 10) return `${count} أسئلة`;
     return `${count} سؤالاً`;
   }
-  if (locale === "fr") return `${count} questions`;
   return `${count} questions`;
 }
 
@@ -33,8 +32,6 @@ export function conceptCountLabel(count: number): string {
 }
 
 export const MODULE_PAGE_COPY = {
-  home: "الرئيسية",
-  curriculum: "المحاور",
   startCta: "ابدأ اختبار هذا المحور",
   startNote: "يفتح التطبيق ويبدأ هذا الاختبار مباشرة.",
   categoriesTitle: "توزيع الأسئلة حسب المفهوم",
@@ -42,7 +39,6 @@ export const MODULE_PAGE_COPY = {
   samplesTitle: "أمثلة من الأسئلة",
   samplesIntro: "أسئلة نموذجية من بنك هذا المحور، مع الإجابة الصحيحة.",
   questionOf: (index: number) => `سؤال ${index + 1}`,
-  generalCategory: "عام",
   explanationLabel: "الشرح",
   conceptsIntro: (
     concepts: string,

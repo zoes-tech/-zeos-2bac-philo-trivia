@@ -15,8 +15,10 @@ import {
 import { DAILY_SIZE, localDateKey } from "@/lib/daily";
 import { TOTAL_MODULES, TOTAL_QUESTIONS } from "@/lib/curriculum";
 import { questionCountLabel } from "@/i18n/labels";
+import { accuracyOf } from "@/lib/scoring";
 import { recommendedModule } from "@/lib/recommendation";
 import { scrollToId } from "@/lib/scroll";
+import { DASHBOARD_ANCHOR, PLAY_ANCHOR } from "@/lib/routes";
 import { useGameStore } from "@/store/useStore";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +35,7 @@ export function RetentionDashboard() {
   const completedModules = useGameStore((state) => state.completedModules);
   const totalAnswered = useGameStore((state) => state.totalAnswered);
   const totalCorrect = useGameStore((state) => state.totalCorrect);
+  const bestStreak = useGameStore((state) => state.bestStreak);
   const quizMode = useGameStore((state) => state.quizMode);
   const onboardingDismissed = useGameStore(
     (state) => state.onboardingDismissed,
@@ -48,8 +51,7 @@ export function RetentionDashboard() {
   const today = localDateKey();
   const dailyDone = dailyResult?.date === today;
   const mistakeCount = Object.keys(mistakes).length;
-  const accuracy =
-    totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+  const accuracy = accuracyOf(totalCorrect, totalAnswered);
   const isReturning =
     dailyStreak > 0 || totalAnswered > 0 || completedModules.length > 0;
   const showIntro = !isReturning && !onboardingDismissed;
@@ -57,7 +59,7 @@ export function RetentionDashboard() {
 
   return (
     <section
-      id="dashboard"
+      id={DASHBOARD_ANCHOR}
       aria-label="لوحة التقدم"
       className="relative z-10 mx-auto w-full max-w-3xl scroll-mt-4 px-4 pb-8"
     >
@@ -212,7 +214,7 @@ export function RetentionDashboard() {
             {currentAttempt ? (
               <button
                 type="button"
-                onClick={() => scrollToId("play")}
+                onClick={() => scrollToId(PLAY_ANCHOR)}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 text-xs font-bold text-white"
               >
                 متابعة الاختبار
@@ -235,7 +237,7 @@ export function RetentionDashboard() {
               <Flame aria-hidden="true" className="h-4 w-4 text-yellow-300" />
               أرقامك
             </h3>
-            <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <dl className="mt-3 grid grid-cols-2 gap-2 text-center">
               <div className="rounded-lg bg-black/20 p-2">
                 <dt className="text-[10px] text-zinc-500">دقة</dt>
                 <dd className="mt-1 text-sm font-bold text-white">
@@ -252,6 +254,12 @@ export function RetentionDashboard() {
                 <dt className="text-[10px] text-zinc-500">محاور</dt>
                 <dd className="mt-1 text-sm font-bold text-white">
                   {completedModules.length}
+                </dd>
+              </div>
+              <div className="rounded-lg bg-black/20 p-2">
+                <dt className="text-[10px] text-zinc-500">أعلى سلسلة</dt>
+                <dd className="mt-1 text-sm font-bold text-white">
+                  {bestStreak}
                 </dd>
               </div>
             </dl>
