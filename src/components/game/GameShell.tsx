@@ -27,6 +27,7 @@ export function GameShell() {
   const clearLastResult = useGameStore((state) => state.clearLastResult);
   const sectionRef = useRef<HTMLElement>(null);
   const startedAt = attempt?.startedAt;
+  const hadAttempt = useRef(false);
 
   useEffect(() => {
     const moduleId = new URLSearchParams(window.location.search).get(
@@ -40,9 +41,17 @@ export function GameShell() {
   }, [startModuleQuiz]);
 
   useEffect(() => {
-    if (!startedAt) return;
-    sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (startedAt) {
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }, [startedAt]);
+
+  useEffect(() => {
+    if (hadAttempt.current && !attempt && lastResult) {
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    hadAttempt.current = Boolean(attempt);
+  }, [attempt, lastResult]);
 
   const handleRetry = () => {
     if (!lastResult) return;

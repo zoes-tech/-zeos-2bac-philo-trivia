@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { createPortal } from "react-dom";
 import { useDialog } from "@/hooks/use-dialog";
 import { AnimatePresence, motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -17,7 +18,9 @@ export function EndQuizDialog({
   const cancelRef = useRef<HTMLButtonElement>(null);
   useDialog(open, onCancel, cancelRef);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -69,6 +72,7 @@ export function EndQuizDialog({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

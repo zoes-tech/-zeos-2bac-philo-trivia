@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useDialog } from "@/hooks/use-dialog";
 import { motion } from "framer-motion";
 import { X, Quote, User } from "lucide-react";
@@ -21,7 +22,9 @@ export function PhilosopherProfile({
   const closeRef = useRef<HTMLButtonElement>(null);
   useDialog(true, onClose, closeRef);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -94,6 +97,7 @@ export function PhilosopherProfile({
           </div>
         </GlassCard>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
