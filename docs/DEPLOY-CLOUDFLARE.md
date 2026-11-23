@@ -9,8 +9,9 @@ from its CDN and there is no compute bill.
 | --- | --- |
 | Cloudflare project | `zoes-philo` |
 | Production URL | <https://zoes-philo.pages.dev> |
-| First deployment | manual `wrangler pages deploy out` from the maintainer machine |
-| Status | live; headers, sitemap, `llms.txt` and security.txt verified |
+| First deployment | manual `wrangler pages deploy out`, then GitHub Actions |
+| CI status | green (`main`, commit `0b402f8`) |
+| Verified | headers, sitemap, `llms.txt`, `security.txt`, quiz under CSP |
 
 The project was created with `wrangler pages project create zoes-philo
 --production-branch main --force`. The `--force` bypasses Wrangler's new
@@ -18,23 +19,23 @@ delegation of Pages to Workers and creates a classic Pages project. **Do not pas
 `--force` again**: once the project exists, `pages deploy` runs directly against
 it.
 
-### CI blockers
+### CI deployment
 
-The GitHub workflow is committed but has not run yet:
+Every push to `main` deploys automatically. The first CI deployment succeeded on
+2026-11-23 from commit `0b402f8`.
 
-1. the current GitHub token cannot push to `zoes-tech/-zeos-2bac-philo-trivia`
-   (403 on push) and cannot read Actions secrets/variables (403);
-2. `CLOUDFLARE_API_TOKEN` is not set in the repository.
+Repository configuration:
 
-To finish the automation, from an account with write access:
+| Name | Type | Value |
+| --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN` | secret | custom token, **Account → Cloudflare Pages → Edit** only |
+| `CLOUDFLARE_ACCOUNT_ID` | secret | the account ID |
+| `SITE_URL` | variable | `https://zoes-philo.pages.dev` |
 
-1. push `chore/cloudflare-migration-seo` (the token needs `Contents: write` and
-   `Workflows: write`);
-2. add the repository secret `CLOUDFLARE_API_TOKEN` (custom token, **Account →
-   Cloudflare Pages → Edit** only) and `CLOUDFLARE_ACCOUNT_ID`;
-3. merge to `main` or run **Actions → Deploy to Cloudflare Pages → Run workflow**.
+The API token is deliberately limited to Pages: no DNS, WAF, Workers or User
+permissions. It has an expiration date and must be rotated.
 
-Until then, deploys are manual:
+Manual fallback (only if CI is unavailable):
 
 ```bash
 npm run build
@@ -49,6 +50,7 @@ push to main
    ▼
 GitHub Actions (.github/workflows/deploy.yml)
    ├── npm ci
+   ├── npm audit --omit=dev --audit-level=high
    ├── npm run typecheck
    ├── npm run lint
    ├── npm run build          → out/
