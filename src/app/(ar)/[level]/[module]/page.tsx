@@ -1,24 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ModulePage } from "@/components/site/ModulePage";
-import {
-  findModule,
-  LEVELS,
-  LEVEL_SLUG,
-  MODULES_BY_LEVEL,
-} from "@/lib/curriculum";
+import { findModule, MODULE_PAGES } from "@/lib/curriculum";
 import { buildModuleMetadata } from "@/lib/seo";
 
 type PageParams = { level: string; module: string };
 
 /** Every module page is known at build time. */
 export function generateStaticParams(): PageParams[] {
-  return LEVELS.flatMap((level) =>
-    MODULES_BY_LEVEL[level.id].map((module) => ({
-      level: LEVEL_SLUG[level.id],
-      module: module.id,
-    })),
-  );
+  return MODULE_PAGES.map(({ levelSlug, moduleId }) => ({
+    level: levelSlug,
+    module: moduleId,
+  }));
 }
 
 export const dynamicParams = false;
@@ -31,7 +24,7 @@ export async function generateMetadata({
   const { level, module: moduleId } = await params;
   const found = findModule(level, moduleId);
   if (!found) return {};
-  return buildModuleMetadata(found.level, found.module);
+  return buildModuleMetadata(found.level, found.module, "ar");
 }
 
 export default async function CurriculumModulePage({
@@ -43,5 +36,5 @@ export default async function CurriculumModulePage({
   const found = findModule(level, moduleId);
   if (!found) notFound();
 
-  return <ModulePage level={found.level} module={found.module} />;
+  return <ModulePage level={found.level} module={found.module} locale="ar" />;
 }

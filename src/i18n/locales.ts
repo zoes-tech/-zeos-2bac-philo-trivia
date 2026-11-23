@@ -1,30 +1,45 @@
-export const LOCALES = ["ar", "fr", "en"] as const;
+import localeData from "@/data/locales.json";
 
-export type Locale = (typeof LOCALES)[number];
+export type Locale = "ar" | "fr" | "en";
 
-export const DEFAULT_LOCALE: Locale = "ar";
+type LocaleConfig = {
+  id: Locale;
+  path: string;
+  htmlLang: string;
+  hreflang: string;
+  ogLocale: string;
+  dir: "rtl" | "ltr";
+  label: string;
+};
 
-/** URL path for a locale. Arabic is served at the root. */
+const CONFIG = localeData as LocaleConfig[];
+
+export const LOCALE_CONFIG = Object.fromEntries(
+  CONFIG.map((locale) => [locale.id, locale]),
+) as Record<Locale, LocaleConfig>;
+
+export const LOCALES = CONFIG.map((locale) => locale.id);
+
+const DEFAULT_LOCALE: Locale = "ar";
+
 export function localePath(locale: Locale): string {
-  return locale === DEFAULT_LOCALE ? "/" : `/${locale}/`;
+  return LOCALE_CONFIG[locale].path;
 }
 
-export const HTML_LANG: Record<Locale, string> = {
-  ar: "ar-MA",
-  fr: "fr",
-  en: "en",
+export const HTML_LANG: Record<Locale, string> = Object.fromEntries(
+  CONFIG.map((locale) => [locale.id, locale.htmlLang]),
+) as Record<Locale, string>;
+
+export const TEXT_DIR: Record<Locale, "rtl" | "ltr"> = Object.fromEntries(
+  CONFIG.map((locale) => [locale.id, locale.dir]),
+) as Record<Locale, "rtl" | "ltr">;
+
+/** hreflang map shared by metadata, sitemap and the visible switcher. */
+export const HREFLANG_PATHS: Record<string, string> = {
+  ...Object.fromEntries(CONFIG.map((locale) => [locale.hreflang, locale.path])),
+  "x-default": LOCALE_CONFIG[DEFAULT_LOCALE].path,
 };
 
-export const TEXT_DIR: Record<Locale, "rtl" | "ltr"> = {
-  ar: "rtl",
-  fr: "ltr",
-  en: "ltr",
-};
-
-/** hreflang map shared by metadata and the generated sitemap. */
-export const HREFLANG_PATHS = {
-  "ar-MA": "/",
-  fr: "/fr/",
-  en: "/en/",
-  "x-default": "/",
-} as const;
+export const LOCALE_LABEL: Record<Locale, string> = Object.fromEntries(
+  CONFIG.map((locale) => [locale.id, locale.label]),
+) as Record<Locale, string>;

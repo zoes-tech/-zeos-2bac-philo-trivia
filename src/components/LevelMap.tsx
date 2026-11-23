@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { BookOpen, ChevronLeft } from "lucide-react";
-import { LEVEL_COPY } from "@/i18n/content";
+import { LEVEL_COPY } from "@/i18n/curriculum-copy";
 import { LEVELS } from "@/lib/curriculum";
 import { useGameStore } from "@/store/useStore";
 import { cn } from "@/lib/utils";

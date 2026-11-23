@@ -11,12 +11,9 @@ import {
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import {
-  LEVEL_COPY,
-  MODULE_COPY,
-  questionCountLabel,
-  type SiteContent,
-} from "@/i18n/content";
+import { LEVEL_COPY, MODULE_COPY } from "@/i18n/curriculum-copy";
+import { questionCountLabel } from "@/i18n/labels";
+import type { SiteContent } from "@/i18n/site-content";
 import type { Locale } from "@/i18n/locales";
 import { LEVELS, MODULES_BY_LEVEL, modulePath } from "@/lib/curriculum";
 

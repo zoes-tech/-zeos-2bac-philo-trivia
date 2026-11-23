@@ -1,0 +1,17 @@
+[
+  {
+    "id": "common-core",
+    "slug": "tronc-commun",
+    "banks": ["common-core.json"]
+  },
+  {
+    "id": "1st-bac",
+    "slug": "1bac",
+    "banks": ["1st-bac.json"]
+  },
+  {
+    "id": "2nd-bac",
+    "slug": "2bac",
+    "banks": ["2nd-bac.json", "2nd-bac-knowledge.json", "2nd-bac-morality.json"]
+  }
+]

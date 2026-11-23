@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { Github, Heart } from "lucide-react";
-import { SITE_CONTENT } from "@/i18n/content";
-import { LOCALES, localePath, type Locale } from "@/i18n/locales";
+import { SITE_CONTENT } from "@/i18n/site-content";
+import { LOCALE_CONFIG, LOCALE_LABEL, LOCALES, localePath, type Locale } from "@/i18n/locales";
 import { SITE } from "@/lib/site";
-
-const LOCALE_LABEL: Record<Locale, string> = {
-  ar: "العربية",
-  fr: "Français",
-  en: "English",
-};
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const content = SITE_CONTENT[locale];
@@ -46,7 +40,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
             <Link
               key={item}
               href={localePath(item)}
-              hrefLang={item}
+              hrefLang={LOCALE_CONFIG[item].hreflang}
               aria-current={item === locale ? "page" : undefined}
               className={
                 item === locale

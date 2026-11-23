@@ -1,0 +1,12 @@
+{
+  "url": "https://zoes-philo.pages.dev",
+  "name": "رحلة الفيلسوف",
+  "nameEn": "Philosopher's Journey",
+  "brand": "Zoes Tech",
+  "github": "https://github.com/zoes-tech/-zeos-2bac-philo-trivia",
+  "ogImage": "/og.png",
+  "ogWidth": 1200,
+  "ogHeight": 630,
+  "themeColor": "#000000",
+  "backgroundColor": "#000000"
+}

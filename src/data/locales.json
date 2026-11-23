@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ar",
+    "path": "/",
+    "htmlLang": "ar-MA",
+    "hreflang": "ar-MA",
+    "ogLocale": "ar_MA",
+    "dir": "rtl",
+    "label": "العربية"
+  },
+  {
+    "id": "fr",
+    "path": "/fr/",
+    "htmlLang": "fr",
+    "hreflang": "fr",
+    "ogLocale": "fr_MA",
+    "dir": "ltr",
+    "label": "Français"
+  },
+  {
+    "id": "en",
+    "path": "/en/",
+    "htmlLang": "en",
+    "hreflang": "en",
+    "ogLocale": "en_US",
+    "dir": "ltr",
+    "label": "English"
+  }
+]

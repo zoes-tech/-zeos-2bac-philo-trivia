@@ -13,22 +13,23 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const curriculumDir = path.join(root, "src/data/curriculum");
 const explanationsDir = path.join(root, "src/data/explanations");
 
-const BANKS = [
-  "common-core.json",
-  "1st-bac.json",
-  "2nd-bac.json",
-  "2nd-bac-knowledge.json",
-  "2nd-bac-morality.json",
-];
+const levels = JSON.parse(
+  fs.readFileSync(path.join(root, "src/data/levels.json"), "utf8"),
+);
 
-let questions = [];
-for (const file of BANKS) {
-  const modules = JSON.parse(
-    fs.readFileSync(path.join(curriculumDir, file), "utf8"),
-  );
-  for (const entry of modules) {
-    for (const question of entry.quiz ?? []) {
-      questions.push({ key: `${entry.id}:${question.id}`, module: entry.id });
+const questions = [];
+for (const level of levels) {
+  for (const bank of level.banks) {
+    const modules = JSON.parse(
+      fs.readFileSync(path.join(curriculumDir, bank), "utf8"),
+    );
+    for (const entry of modules) {
+      for (const question of entry.quiz ?? []) {
+        questions.push({
+          key: `${entry.id}:${question.id}`,
+          module: entry.id,
+        });
+      }
     }
   }
 }

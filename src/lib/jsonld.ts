@@ -1,6 +1,7 @@
-import type { SiteContent } from "@/i18n/content";
-import { LEVEL_COPY, MODULE_COPY, questionCountLabel } from "@/i18n/content";
-import type { Locale } from "@/i18n/locales";
+import { getLevelCopy, getModuleCopy } from "@/i18n/curriculum-copy";
+import { questionCountLabel } from "@/i18n/labels";
+import type { SiteContent } from "@/i18n/site-content";
+import { HTML_LANG, type Locale } from "@/i18n/locales";
 import {
   ALL_MODULES,
   LEVELS,
@@ -13,6 +14,8 @@ import type { Module } from "@/types";
 import { SITE } from "@/lib/site";
 
 type JsonLd = Record<string, unknown>;
+
+export type Crumb = { name: string; href: string };
 
 export function organizationJsonLd(): JsonLd {
   return {
@@ -27,23 +30,19 @@ export function organizationJsonLd(): JsonLd {
   };
 }
 
-export function websiteJsonLd(locale: Locale, siteName: string): JsonLd {
+export function websiteJsonLd(locale: Locale): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": `${SITE.url}/#website`,
     url: SITE.url,
-    name: siteName,
-    inLanguage: locale === "ar" ? "ar-MA" : locale,
+    name: SITE.name,
+    inLanguage: HTML_LANG[locale],
     publisher: { "@id": `${SITE.url}/#organization` },
   };
 }
 
-export function appJsonLd(
-  locale: Locale,
-  content: SiteContent,
-  language: string,
-): JsonLd {
+export function appJsonLd(locale: Locale, content: SiteContent): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -55,7 +54,7 @@ export function appJsonLd(
     applicationSubCategory: "Quiz",
     operatingSystem: "Web, Android, iOS",
     url: `${SITE.url}/`,
-    inLanguage: language,
+    inLanguage: HTML_LANG[locale],
     isAccessibleForFree: true,
     educationalLevel: "Baccalaureate",
     teaches: ALL_MODULES.map((module) => module.title),
@@ -80,30 +79,41 @@ export function appJsonLd(
   };
 }
 
-/** One LearningResource per curriculum module, grouped in an ItemList. */
+function moduleEntity(
+  locale: Locale,
+  level: LevelId,
+  module: Module,
+): JsonLd {
+  const copy = getModuleCopy(locale, module);
+
+  return {
+    "@type": "Quiz",
+    "@id": `${SITE.url}/#module-${module.id}`,
+    name: copy.title,
+    description: copy.description,
+    url: `${SITE.url}${modulePath(level, module.id)}`,
+    learningResourceType: "Quiz",
+    educationalLevel: getLevelCopy(locale, level).title,
+    inLanguage: HTML_LANG[locale],
+    isAccessibleForFree: true,
+    numberOfQuestions: module.quiz?.length ?? 0,
+    about: module.concepts.map((concept) => concept.name),
+    isPartOf: { "@id": `${SITE.url}/#website` },
+    publisher: { "@id": `${SITE.url}/#organization` },
+  };
+}
+
+/** One Quiz entity per curriculum module, grouped in an ItemList. */
 export function curriculumJsonLd(locale: Locale): JsonLd {
-  const copy = MODULE_COPY[locale];
   let position = 0;
 
   const items = LEVELS.flatMap((level) =>
     MODULES_BY_LEVEL[level.id].map((module) => {
       position += 1;
-      const questionCount = module.quiz?.length ?? 0;
       return {
         "@type": "ListItem",
         position,
-        item: {
-          "@type": "Quiz",
-          "@id": `${SITE.url}/#module-${module.id}`,
-          name: copy[module.id]?.title ?? module.title,
-          description: copy[module.id]?.description ?? module.description,
-          learningResourceType: "Quiz",
-          educationalLevel: LEVEL_COPY[locale][level.id].title,
-          inLanguage: "ar-MA",
-          isAccessibleForFree: true,
-          numberOfQuestions: questionCount,
-          about: module.title,
-        },
+        item: moduleEntity(locale, level.id, module),
       };
     }),
   );
@@ -129,81 +139,28 @@ export function faqJsonLd(content: SiteContent): JsonLd {
   };
 }
 
-export function breadcrumbJsonLd(
-  labels: { home: string; current: string },
-  currentPath: string,
-): JsonLd {  return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: labels.home,
-        item: `${SITE.url}/`,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: labels.current,
-        item: `${SITE.url}${currentPath}`,
-      },
-    ],
-  };
-}
-
-/** Structured data for an individual curriculum module page. */
-export function moduleJsonLd(level: LevelId, module: Module): JsonLd {
-  const copy = MODULE_COPY.ar[module.id];
-  const path = modulePath(level, module.id);
-  const questionCount = module.quiz?.length ?? 0;
-
+export function breadcrumbJsonLd(items: Crumb[]): JsonLd {
   return {
     "@context": "https://schema.org",
-    "@type": "Quiz",
-    "@id": `${SITE.url}${path}#quiz`,
-    name: copy?.title ?? module.title,
-    description: copy?.description ?? module.description,
-    url: `${SITE.url}${path}`,
-    inLanguage: "ar-MA",
-    educationalLevel: LEVEL_COPY.ar[level].title,
-    numberOfQuestions: questionCount,
-    isAccessibleForFree: true,
-    about: module.concepts.map((concept) => concept.name),
-    isPartOf: { "@id": `${SITE.url}/#website` },
-    publisher: { "@id": `${SITE.url}/#organization` },
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.href.startsWith("http")
+        ? item.href
+        : `${SITE.url}${item.href}`,
+    })),
   };
 }
 
-export function moduleBreadcrumbJsonLd(
+export function moduleJsonLd(
   level: LevelId,
   module: Module,
+  locale: Locale = "ar",
 ): JsonLd {
-  const copy = MODULE_COPY.ar[module.id];
-  const path = modulePath(level, module.id);
-
   return {
     "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "الرئيسية",
-        item: `${SITE.url}/`,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: LEVEL_COPY.ar[level].title,
-        item: `${SITE.url}/#curriculum`,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: copy?.title ?? module.title,
-        item: `${SITE.url}${path}`,
-      },
-    ],
+    ...moduleEntity(locale, level, module),
   };
 }

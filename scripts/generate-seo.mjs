@@ -4,8 +4,7 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Generates robots.txt, sitemap.xml and llms.txt into the static export.
- * Runs after `next build`, so the files are derived from the same data as the
- * pages and can never drift.
+ * Runs after `next build`, from the same manifests the app uses.
  */
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, "out");
@@ -15,23 +14,24 @@ if (!fs.existsSync(outDir)) {
   process.exit(1);
 }
 
+const readJson = (relative) =>
+  JSON.parse(fs.readFileSync(path.join(root, relative), "utf8"));
+
+const site = readJson("src/data/site.json");
+const levels = readJson("src/data/levels.json");
+const locales = readJson("src/data/locales.json");
+
 const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://zoes-philo.pages.dev"
+  process.env.NEXT_PUBLIC_SITE_URL || site.url
 ).replace(/\/+$/, "");
 
-/** Must match LEVEL_SLUG in src/lib/curriculum.ts. */
-const BANKS = [
-  { file: "common-core.json", levelSlug: "tronc-commun" },
-  { file: "1st-bac.json", levelSlug: "1bac" },
-  { file: "2nd-bac.json", levelSlug: "2bac" },
-  { file: "2nd-bac-knowledge.json", levelSlug: "2bac" },
-  { file: "2nd-bac-morality.json", levelSlug: "2bac" },
-];
-
-const modules = BANKS.flatMap(({ file, levelSlug }) =>
-  JSON.parse(
-    fs.readFileSync(path.join(root, "src/data/curriculum", file), "utf8"),
-  ).map((module) => ({ ...module, levelSlug })),
+const modules = levels.flatMap((level) =>
+  level.banks.flatMap((bank) =>
+    readJson(`src/data/curriculum/${bank}`).map((module) => ({
+      ...module,
+      levelSlug: level.slug,
+    })),
+  ),
 );
 
 const questionCount = modules.reduce(
@@ -39,11 +39,12 @@ const questionCount = modules.reduce(
   0,
 );
 
-const localePages = [
-  { path: "/", priority: "1.0" },
-  { path: "/fr/", priority: "0.8" },
-  { path: "/en/", priority: "0.8" },
-];
+const arLocale = locales.find((locale) => locale.path === "/") ?? locales[0];
+
+const localePages = locales.map((locale) => ({
+  path: locale.path,
+  priority: locale.id === arLocale.id ? "1.0" : "0.8",
+}));
 
 const modulePages = modules.map((module) => ({
   path: `/${module.levelSlug}/${module.id}/`,
@@ -51,10 +52,8 @@ const modulePages = modules.map((module) => ({
 }));
 
 const localeAlternates = [
-  ["ar-MA", `${siteUrl}/`],
-  ["fr", `${siteUrl}/fr/`],
-  ["en", `${siteUrl}/en/`],
-  ["x-default", `${siteUrl}/`],
+  ...locales.map((locale) => [locale.hreflang, `${siteUrl}${locale.path}`]),
+  ["x-default", `${siteUrl}${arLocale.path}`],
 ];
 
 const lastmod = new Date().toISOString().slice(0, 10);
@@ -89,7 +88,7 @@ ${modulePages
     <changefreq>monthly</changefreq>
     <priority>${page.priority}</priority>
 ${alternateLinks([
-  ["ar-MA", `${siteUrl}${page.path}`],
+  [arLocale.hreflang, `${siteUrl}${page.path}`],
   ["x-default", `${siteUrl}${page.path}`],
 ])}
   </url>`,
@@ -105,14 +104,14 @@ Allow: /
 Sitemap: ${siteUrl}/sitemap.xml
 `;
 
-const llms = `# رحلة الفيلسوف — Philosopher's Journey
+const llms = `# ${site.name} — ${site.nameEn}
 
 > Free, open-source philosophy quiz for Moroccan Baccalaureate students. ${questionCount} interactive questions across ${modules.length} curriculum themes and 3 school levels, in Arabic (RTL), with instant feedback, point streaks and a mistake-review card. No account, no tracking cookies; progress is stored locally.
 
 ## Key facts
 
-- Name: رحلة الفيلسوف (Philosopher's Journey)
-- Publisher: Zoes Tech
+- Name: ${site.name} (${site.nameEn})
+- Publisher: ${site.brand}
 - Licence: MIT (open source)
 - Price: free, no ads, no subscription
 - Languages: Arabic (app), French and English (overview pages)
@@ -143,7 +142,7 @@ ${modules
 
 ## Source
 
-- Repository: https://github.com/zoes-tech/-zeos-2bac-philo-trivia
+- Repository: ${site.github}
 - Stack: Next.js static export, React, Tailwind CSS
 - Hosting: Cloudflare Pages
 

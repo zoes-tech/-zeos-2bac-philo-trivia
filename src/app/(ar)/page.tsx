@@ -1,53 +1,22 @@
 import { GameIsland } from "@/components/game/GameIsland";
 import { DashboardIsland } from "@/components/game/DashboardIsland";
 import { AppProviders } from "@/components/site/AppProviders";
-import { JsonLd } from "@/components/seo/JsonLd";
-import {
-  CurriculumList,
-  FaqSection,
-  FeatureGrid,
-  Hero,
-  HowItWorks,
-} from "@/components/site/LandingSections";
-import { SiteFooter } from "@/components/site/SiteFooter";
-import { SiteHeader } from "@/components/site/SiteHeader";
-import { SITE_CONTENT } from "@/i18n/content";
-import { HTML_LANG } from "@/i18n/locales";
-import { SITE } from "@/lib/site";
-import {
-  appJsonLd,
-  curriculumJsonLd,
-  faqJsonLd,
-  organizationJsonLd,
-  websiteJsonLd,
-} from "@/lib/jsonld";
+import { LandingPage } from "@/components/site/LandingPage";
 
 export default function HomePage() {
-  const content = SITE_CONTENT.ar;
-
   return (
-    <>
-      <JsonLd data={organizationJsonLd()} />
-      <JsonLd data={websiteJsonLd("ar", SITE.name)} />
-      <JsonLd data={appJsonLd("ar", content, HTML_LANG.ar)} />
-      <JsonLd data={curriculumJsonLd("ar")} />
-      <JsonLd data={faqJsonLd(content)} />
-
-      <SiteHeader locale="ar" />
-
-      <main id="main">
-        <Hero content={content} playHref="#dashboard" />
-        <DashboardIsland />
-        <AppProviders>
-          <GameIsland />
-        </AppProviders>
-        <FeatureGrid content={content} />
-        <CurriculumList content={content} locale="ar" />
-        <HowItWorks content={content} />
-        <FaqSection content={content} />
-      </main>
-
-      <SiteFooter locale="ar" />
-    </>
+    <LandingPage
+      locale="ar"
+      playHref="#dashboard"
+      showStats={false}
+      interactive={
+        <>
+          <DashboardIsland />
+          <AppProviders>
+            <GameIsland />
+          </AppProviders>
+        </>
+      }
+    />
   );
 }

@@ -15,7 +15,7 @@ import {
 import { GlassCard } from "@/components/ui/GlassCard";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { getMasteryLabel } from "@/lib/scoring";
-import { mistakeCountLabel, questionCountLabel } from "@/i18n/content";
+import { mistakeCountLabel, questionCountLabel } from "@/i18n/labels";
 import { getModulePath } from "@/lib/curriculum";
 import { cn } from "@/lib/utils";
 import type { QuizResult } from "@/store/useStore";

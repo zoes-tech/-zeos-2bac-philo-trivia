@@ -1,44 +1,13 @@
 import Link from "next/link";
 import { Github } from "lucide-react";
-import { LOCALES, localePath, type Locale } from "@/i18n/locales";
+import { LOCALE_CONFIG, LOCALE_LABEL, LOCALES, localePath, type Locale } from "@/i18n/locales";
+import { SITE_CONTENT } from "@/i18n/site-content";
 import { SITE } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-const NAV: Record<
-  Locale,
-  { home: string; curriculum: string; faq: string; language: string; navLabel: string }
-> = {
-  ar: {
-    home: "الرئيسية",
-    curriculum: "المحاور",
-    faq: "الأسئلة الشائعة",
-    language: "اللغة",
-    navLabel: "التنقل",
-  },
-  fr: {
-    home: "Accueil",
-    curriculum: "Thèmes",
-    faq: "FAQ",
-    language: "Langue",
-    navLabel: "Navigation",
-  },
-  en: {
-    home: "Home",
-    curriculum: "Themes",
-    faq: "FAQ",
-    language: "Language",
-    navLabel: "Navigation",
-  },
-};
-
-const LOCALE_LABEL: Record<Locale, string> = {
-  ar: "العربية",
-  fr: "Français",
-  en: "English",
-};
-
 export function SiteHeader({ locale }: { locale: Locale }) {
-  const nav = NAV[locale];
+  const chrome = SITE_CONTENT[locale].chrome;
+  const nav = chrome.nav;
 
   return (
     <header className="relative z-20 mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-5">
@@ -63,17 +32,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       </Link>
 
       <nav
-        aria-label={nav.navLabel}
+        aria-label={chrome.navLabel}
         className="flex items-center gap-1 text-sm text-zinc-400"
       >
         <Link
-          href="#curriculum"
+          href="/#curriculum"
           className="rounded-lg px-2.5 py-1.5 transition-colors hover:bg-white/5 hover:text-white"
         >
           {nav.curriculum}
         </Link>
         <Link
-          href="#faq"
+          href="/#faq"
           className="rounded-lg px-2.5 py-1.5 transition-colors hover:bg-white/5 hover:text-white"
         >
           {nav.faq}
@@ -89,7 +58,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link
             key={item}
             href={localePath(item)}
-            hrefLang={item}
+            hrefLang={LOCALE_CONFIG[item].hreflang}
             aria-current={item === locale ? "page" : undefined}
             title={LOCALE_LABEL[item]}
             className={cn(
