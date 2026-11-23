@@ -2,8 +2,8 @@ import type { Locale } from "@/i18n/locales";
 import type { LevelId } from "@/lib/curriculum";
 import type { Module } from "@/types";
 
-export type LevelCopy = Record<LevelId, { title: string; description: string }>;
-export type ModuleCopy = Record<string, { title: string; description: string }>;
+type LevelCopy = Record<LevelId, { title: string; description: string }>;
+type ModuleCopy = Record<string, { title: string; description: string }>;
 
 export const LEVEL_COPY: Record<Locale, LevelCopy> = {
   ar: {

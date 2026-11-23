@@ -1,220 +1,270 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { LevelId } from "@/lib/curriculum";
-import { ALL_MODULES } from "@/lib/curriculum";
+import { getModuleById, type LevelId } from "@/lib/curriculum";
+import { contentKey } from "@/lib/content-key";
 import {
   getDailyChallenge,
   localDateKey,
-  mistakeKey,
   yesterdayKey,
 } from "@/lib/daily";
-import type { Question, QuizKind, QuizMode, QuizQuestion } from "@/types";
-
-export interface QuizReviewItem {
-  moduleId: string;
-  questionId: string;
-  question: string;
-  category?: string;
-  selectedAnswer: string | null;
-  correctAnswer: string;
-  isCorrect: boolean;
-}
-
-export interface CurrentQuiz {
-  kind: QuizKind;
-  moduleId: string;
-  moduleTitle: string;
-  questions: QuizQuestion[];
-  currentIndex: number;
-  score: number;
-  total: number;
-  reviewItems: QuizReviewItem[];
-  startedAt: string;
-}
-
-export interface QuizResult {
-  kind: QuizKind;
-  moduleId: string;
-  moduleTitle: string;
-  correct: number;
-  total: number;
-  accuracy: number;
-  xpEarned: number;
-  completedAt: string;
-  reviewItems: QuizReviewItem[];
-}
-
-export interface DailyResult {
-  date: string;
-  correct: number;
-  total: number;
-}
-
-interface StartQuizOptions {
-  kind: QuizKind;
-  moduleId: string;
-  moduleTitle: string;
-  questions: Array<Question | QuizQuestion>;
-}
+import { questionsForKeys } from "@/lib/questions";
+import {
+  calculateAnswerScore,
+  type AnswerScoreBreakdown,
+} from "@/lib/scoring";
+import type {
+  CurrentAttempt,
+  DailyResult,
+  MistakeMap,
+  QuizKind,
+  QuizMode,
+  QuizQuestion,
+  QuizResult,
+  QuizReviewItem,
+} from "@/types/quiz";
 
 interface GameState {
   currentLevel: LevelId;
-  xp: number;
-  unlockedConcepts: string[];
-  completedQuizzes: string[];
-  unlockedPhilosophers: string[];
-  currentQuiz: CurrentQuiz | null;
-  lastQuizResult: QuizResult | null;
-  /** Keys are `moduleId:questionId`; question ids repeat across modules. */
-  mistakes: string[];
-  /** How many times each mistake key was missed; drives review ordering. */
-  mistakeCounts: Record<string, number>;
-  recentResults: QuizResult[];
-  dailyResult: DailyResult | null;
+  points: number;
+  currentStreak: number;
+  bestStreak: number;
+  totalAnswered: number;
+  totalCorrect: number;
   dailyStreak: number;
   lastActiveDate: string | null;
+  completedModules: string[];
+  unlockedPhilosophers: string[];
+  mistakes: MistakeMap;
+  recentResults: QuizResult[];
+  lastQuizResult: QuizResult | null;
+  dailyResult: DailyResult | null;
+  currentAttempt: CurrentAttempt | null;
   quizMode: QuizMode;
+  onboardingDismissed: boolean;
 
   setLevel: (level: LevelId) => void;
-  addXp: (amount: number) => void;
-  unlockConcept: (conceptId: string) => void;
-  completeQuiz: (quizId: string) => void;
-  unlockPhilosopher: (philosopherId: string) => void;
-  startQuiz: (options: StartQuizOptions) => void;
-  startDailyChallenge: () => void;
-  startMistakeReview: () => void;
-  answerQuiz: (answer: QuizReviewItem) => void;
-  nextQuizQuestion: () => void;
-  endQuiz: () => void;
-  discardQuiz: () => void;
-  clearLastQuizResult: () => void;
   setQuizMode: (mode: QuizMode) => void;
+  dismissOnboarding: () => void;
+  startModuleQuiz: (moduleId: string) => void;
+  startDailyChallenge: () => void;
+  startReview: (keys?: string[]) => void;
+  submitAnswer: (
+    answer: QuizReviewItem,
+    timeTaken?: number,
+  ) => AnswerScoreBreakdown | null;
+  advanceOrEnd: () => void;
+  endAttempt: () => void;
+  discardAttempt: () => void;
+  clearLastResult: () => void;
+  resetProgress: () => void;
+}
+
+const REVIEW_TITLE = "مراجعة الأخطاء";
+
+function readLegacyScore() {
+  if (typeof window === "undefined") {
+    return { points: 0, currentStreak: 0, bestStreak: 0 };
+  }
+
+  try {
+    const parsed = JSON.parse(localStorage.getItem("zeos-stats") ?? "null");
+    if (!parsed) return { points: 0, currentStreak: 0, bestStreak: 0 };
+
+    return {
+      points: Number(parsed.score) || 0,
+      currentStreak: Number(parsed.currentStreak) || 0,
+      bestStreak: Number(parsed.highestStreak) || 0,
+    };
+  } catch {
+    return { points: 0, currentStreak: 0, bestStreak: 0 };
+  }
+}
+
+function readLegacyOnboarding(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem("zoes-onboarding") === "1";
+  } catch {
+    return false;
+  }
+}
+
+const legacyScore = readLegacyScore();
+
+const INITIAL_DATA = {
+  currentLevel: "common-core" as LevelId,
+  points: legacyScore.points,
+  currentStreak: legacyScore.currentStreak,
+  bestStreak: legacyScore.bestStreak,
+  totalAnswered: 0,
+  totalCorrect: 0,
+  dailyStreak: 0,
+  lastActiveDate: null,
+  completedModules: [],
+  unlockedPhilosophers: [],
+  mistakes: {},
+  recentResults: [],
+  lastQuizResult: null,
+  dailyResult: null,
+  currentAttempt: null,
+  quizMode: "timed" as QuizMode,
+  onboardingDismissed: readLegacyOnboarding(),
+};
+
+function normalizeAttempt(value: unknown): CurrentAttempt | null {
+  if (!value || typeof value !== "object") return null;
+  const attempt = value as Partial<CurrentAttempt> & {
+    questions?: QuizQuestion[];
+  };
+  if (!attempt.questions?.length) return null;
+
+  return {
+    kind: attempt.kind ?? "module",
+    moduleId: attempt.moduleId ?? "module",
+    moduleTitle: attempt.moduleTitle ?? "اختبار",
+    questions: attempt.questions,
+    currentIndex: attempt.currentIndex ?? 0,
+    score: attempt.score ?? 0,
+    points: attempt.points ?? 0,
+    total: attempt.total ?? attempt.questions.length,
+    reviewItems: attempt.reviewItems ?? [],
+    startedAt: attempt.startedAt ?? new Date().toISOString(),
+  };
+}
+
+function normalizeResult(value: unknown): QuizResult | null {
+  if (!value || typeof value !== "object") return null;
+  const result = value as Partial<QuizResult> & {
+    xpEarned?: number;
+    reviewItems?: QuizReviewItem[];
+  };
+  const answered = result.answered ?? result.reviewItems?.length ?? 0;
+
+  return {
+    kind: result.kind ?? "module",
+    moduleId: result.moduleId ?? "module",
+    moduleTitle: result.moduleTitle ?? "اختبار",
+    correct: result.correct ?? 0,
+    total: result.total ?? 0,
+    answered,
+    accuracy:
+      result.accuracy ??
+      (answered > 0 ? Math.round(((result.correct ?? 0) / answered) * 100) : 0),
+    pointsEarned: result.pointsEarned ?? 0,
+    completedAt: result.completedAt ?? new Date().toISOString(),
+    reviewItems: result.reviewItems ?? [],
+  };
+}
+
+function normalizeMistakes(saved: Record<string, unknown>): MistakeMap | null {
+  const mistakes = saved.mistakes;
+  if (Array.isArray(mistakes)) {
+    const counts = (saved.mistakeCounts ?? {}) as Record<string, number>;
+    const lastMissedAt =
+      typeof saved.lastActiveDate === "string"
+        ? saved.lastActiveDate
+        : localDateKey();
+
+    return Object.fromEntries(
+      mistakes.map((key) => [
+        String(key),
+        { count: counts[String(key)] ?? 1, lastMissedAt },
+      ]),
+    );
+  }
+
+  if (mistakes && typeof mistakes === "object") {
+    return mistakes as MistakeMap;
+  }
+
+  return null;
 }
 
 export const useGameStore = create<GameState>()(
   persist(
-    (set, get) => ({
-      currentLevel: "common-core",
-      xp: 0,
-      unlockedConcepts: [],
-      completedQuizzes: [],
-      unlockedPhilosophers: [],
-      currentQuiz: null,
-      lastQuizResult: null,
-      mistakes: [],
-      mistakeCounts: {},
-      recentResults: [],
-      dailyResult: null,
-      dailyStreak: 0,
-      lastActiveDate: null,
-      quizMode: "timed",
-
-      setLevel: (level) => set({ currentLevel: level }),
-      addXp: (amount) => set((state) => ({ xp: state.xp + amount })),
-      unlockConcept: (id) =>
-        set((state) => ({
-          unlockedConcepts: state.unlockedConcepts.includes(id)
-            ? state.unlockedConcepts
-            : [...state.unlockedConcepts, id],
-        })),
-      completeQuiz: (id) =>
-        set((state) => ({
-          completedQuizzes: state.completedQuizzes.includes(id)
-            ? state.completedQuizzes
-            : [...state.completedQuizzes, id],
-        })),
-      unlockPhilosopher: (id) =>
-        set((state) => {
-          if (state.unlockedPhilosophers.includes(id)) return state;
-          return {
-            unlockedPhilosophers: [...state.unlockedPhilosophers, id],
-          };
-        }),
-
-      startQuiz: ({ kind, moduleId, moduleTitle, questions }) => {
+    (set, get) => {
+      const begin = (
+        kind: QuizKind,
+        moduleId: string,
+        moduleTitle: string,
+        questions: QuizQuestion[],
+      ) => {
         if (questions.length === 0) return;
 
         set({
           lastQuizResult: null,
-          currentQuiz: {
+          currentAttempt: {
             kind,
             moduleId,
             moduleTitle,
-            questions: questions.map((question) => ({
-              ...question,
-              moduleId:
-                "moduleId" in question && question.moduleId
-                  ? question.moduleId
-                  : moduleId,
-            })),
+            questions,
             currentIndex: 0,
             score: 0,
+            points: 0,
             total: questions.length,
             reviewItems: [],
             startedAt: new Date().toISOString(),
           },
         });
-      },
+      };
 
-      startDailyChallenge: () => {
-        get().startQuiz({
-          kind: "daily",
-          moduleId: "daily",
-          moduleTitle: "تحدي اليوم",
-          questions: getDailyChallenge(),
-        });
-      },
+      return {
+        ...INITIAL_DATA,
 
-      startMistakeReview: () => {
-        const state = get();
-        const questions: QuizQuestion[] = [];
-        // Most-missed questions first: repeated mistakes are the strongest
-        // signal of what needs work.
-        const keys = [...state.mistakes].sort(
-          (a, b) => (state.mistakeCounts[b] ?? 0) - (state.mistakeCounts[a] ?? 0),
-        );
-
-        for (const key of keys) {
-          const separator = key.indexOf(":");
-          const moduleId = key.slice(0, separator);
-          const questionId = key.slice(separator + 1);
-          const owner = ALL_MODULES.find((item) => item.id === moduleId);
-          const question = owner?.quiz?.find((item) => item.id === questionId);
-
-          if (owner && question) {
-            questions.push({ ...question, moduleId: owner.id });
+        setLevel: (level) => set({ currentLevel: level }),
+        setQuizMode: (mode) => set({ quizMode: mode }),
+        dismissOnboarding: () => {
+          set({ onboardingDismissed: true });
+          try {
+            localStorage.setItem("zoes-onboarding", "1");
+          } catch {
+            // The flag is also in the store; storage failure is harmless.
           }
-        }
+        },
 
-        get().startQuiz({
-          kind: "review",
-          moduleId: "review",
-          moduleTitle: "مراجعة الأخطاء",
-          questions: questions.slice(0, 20),
-        });
-      },
+        startModuleQuiz: (moduleId) => {
+          const owner = getModuleById(moduleId);
+          if (!owner?.quiz?.length) return;
 
-      answerQuiz: (answer) =>
-        set((state) => {
-          if (!state.currentQuiz) return state;
+          begin(
+            "module",
+            owner.id,
+            owner.title,
+            owner.quiz.map((question) => ({
+              ...question,
+              moduleId: owner.id,
+            })),
+          );
+        },
 
-          const key = mistakeKey(answer.moduleId, answer.questionId);
-          const mistakes = answer.isCorrect
-            ? state.mistakes.filter((item) => item !== key)
-            : state.mistakes.includes(key)
-              ? state.mistakes
-              : [...state.mistakes, key];
+        startDailyChallenge: () => {
+          begin("daily", "daily", "تحدي اليوم", getDailyChallenge());
+        },
 
-          const previousCount = state.mistakeCounts[key] ?? 0;
-          const mistakeCounts = { ...state.mistakeCounts };
-          if (answer.isCorrect) {
-            delete mistakeCounts[key];
-          } else {
-            mistakeCounts[key] = previousCount + 1;
-          }
+        startReview: (keys) => {
+          const state = get();
+          const selected =
+            keys ??
+            Object.entries(state.mistakes)
+              .sort(([, a], [, b]) => b.count - a.count)
+              .map(([key]) => key);
 
+          begin("review", "review", REVIEW_TITLE, questionsForKeys(selected));
+        },
+
+        submitAnswer: (answer, timeTaken) => {
+          const state = get();
+          const attempt = state.currentAttempt;
+          if (!attempt) return null;
+
+          const key = contentKey(answer.moduleId, answer.questionId);
+          const breakdown = calculateAnswerScore({
+            isCorrect: answer.isCorrect,
+            timeTaken,
+            currentStreak: state.currentStreak,
+          });
           const today = localDateKey();
-          const streakUpdate =
+          const dayUpdate =
             state.lastActiveDate === today
               ? {}
               : {
@@ -225,120 +275,169 @@ export const useGameStore = create<GameState>()(
                       : 1,
                 };
 
-          return {
-            ...state,
-            ...streakUpdate,
-            mistakes,
-            mistakeCounts,
-            currentQuiz: {
-              ...state.currentQuiz,
-              score: state.currentQuiz.score + (answer.isCorrect ? 1 : 0),
-              reviewItems: [...state.currentQuiz.reviewItems, answer],
-            },
-          };
-        }),
-
-      nextQuizQuestion: () =>
-        set((state) => {
-          if (
-            !state.currentQuiz ||
-            state.currentQuiz.currentIndex >= state.currentQuiz.total - 1
-          ) {
-            return state;
+          const mistakes = { ...state.mistakes };
+          if (answer.isCorrect) {
+            delete mistakes[key];
+          } else {
+            mistakes[key] = {
+              count: (mistakes[key]?.count ?? 0) + 1,
+              lastMissedAt: today,
+            };
           }
-          return {
-            ...state,
-            currentQuiz: {
-              ...state.currentQuiz,
-              currentIndex: state.currentQuiz.currentIndex + 1,
+
+          set({
+            ...dayUpdate,
+            points: state.points + breakdown.totalPoints,
+            currentStreak: breakdown.nextStreak,
+            bestStreak: Math.max(state.bestStreak, breakdown.nextStreak),
+            totalAnswered: state.totalAnswered + 1,
+            totalCorrect: state.totalCorrect + (answer.isCorrect ? 1 : 0),
+            mistakes,
+            currentAttempt: {
+              ...attempt,
+              score: attempt.score + (answer.isCorrect ? 1 : 0),
+              points: attempt.points + breakdown.totalPoints,
+              reviewItems: [...attempt.reviewItems, answer],
             },
+          });
+
+          return breakdown;
+        },
+
+        advanceOrEnd: () => {
+          const attempt = get().currentAttempt;
+          if (!attempt) return;
+
+          if (attempt.currentIndex < attempt.total - 1) {
+            set({
+              currentAttempt: {
+                ...attempt,
+                currentIndex: attempt.currentIndex + 1,
+              },
+            });
+          } else {
+            get().endAttempt();
+          }
+        },
+
+        endAttempt: () => {
+          const state = get();
+          const attempt = state.currentAttempt;
+          if (!attempt) return;
+
+          const answered = attempt.reviewItems.length;
+          const result: QuizResult = {
+            kind: attempt.kind,
+            moduleId: attempt.moduleId,
+            moduleTitle: attempt.moduleTitle,
+            correct: attempt.score,
+            total: attempt.total,
+            answered,
+            accuracy:
+              answered > 0 ? Math.round((attempt.score / answered) * 100) : 0,
+            pointsEarned: attempt.points,
+            completedAt: new Date().toISOString(),
+            reviewItems: attempt.reviewItems,
           };
-        }),
 
-      endQuiz: () => {
-        const state = get();
-        const quiz = state.currentQuiz;
-        if (!quiz) return;
+          const completedModules =
+            attempt.kind === "module" &&
+            answered > 0 &&
+            !state.completedModules.includes(attempt.moduleId)
+              ? [...state.completedModules, attempt.moduleId]
+              : state.completedModules;
 
-        const accuracy = Math.round((quiz.score / quiz.total) * 100);
-        const xpEarned = Math.max(1, Math.round(accuracy / 10));
-        const result: QuizResult = {
-          kind: quiz.kind,
-          moduleId: quiz.moduleId,
-          moduleTitle: quiz.moduleTitle,
-          correct: quiz.score,
-          total: quiz.total,
-          accuracy,
-          xpEarned,
-          completedAt: new Date().toISOString(),
-          reviewItems: quiz.reviewItems,
-        };
+          const owner =
+            attempt.kind === "module"
+              ? getModuleById(attempt.moduleId)
+              : undefined;
+          const unlockedPhilosophers =
+            owner?.philosopher &&
+            !state.unlockedPhilosophers.includes(owner.philosopher.id)
+              ? [...state.unlockedPhilosophers, owner.philosopher.id]
+              : state.unlockedPhilosophers;
 
-        const completedQuizzes =
-          quiz.kind === "module" &&
-          quiz.moduleId &&
-          !state.completedQuizzes.includes(quiz.moduleId)
-            ? [...state.completedQuizzes, quiz.moduleId]
-            : state.completedQuizzes;
+          set({
+            completedModules,
+            unlockedPhilosophers,
+            lastQuizResult: result,
+            recentResults: [result, ...state.recentResults].slice(0, 20),
+            dailyResult:
+              attempt.kind === "daily"
+                ? {
+                    date: localDateKey(),
+                    correct: attempt.score,
+                    total: attempt.total,
+                  }
+                : state.dailyResult,
+            currentAttempt: null,
+          });
+        },
 
-        const dailyResult =
-          quiz.kind === "daily"
-            ? {
-                date: localDateKey(),
-                correct: quiz.score,
-                total: quiz.total,
-              }
-            : state.dailyResult;
-
-        const unlocks = quiz.questions[0]?.unlocks;
-        const unlockedPhilosophers =
-          unlocks && !state.unlockedPhilosophers.includes(unlocks)
-            ? [...state.unlockedPhilosophers, unlocks]
-            : state.unlockedPhilosophers;
-
-        set({
-          completedQuizzes,
-          xp: state.xp + xpEarned,
-          lastQuizResult: result,
-          recentResults: [result, ...state.recentResults].slice(0, 12),
-          dailyResult,
-          unlockedPhilosophers,
-          currentQuiz: null,
-        });
-      },
-
-      discardQuiz: () => set({ currentQuiz: null }),
-      clearLastQuizResult: () => set({ lastQuizResult: null }),
-      setQuizMode: (mode) => set({ quizMode: mode }),
-    }),
+        discardAttempt: () => set({ currentAttempt: null }),
+        clearLastResult: () => set({ lastQuizResult: null }),
+        resetProgress: () =>
+          set({
+            ...INITIAL_DATA,
+            points: 0,
+            currentStreak: 0,
+            bestStreak: 0,
+          }),
+      };
+    },
     {
       name: "zeos-game-storage",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         currentLevel: state.currentLevel,
-        xp: state.xp,
-        unlockedConcepts: state.unlockedConcepts,
-        completedQuizzes: state.completedQuizzes,
-        unlockedPhilosophers: state.unlockedPhilosophers,
-        lastQuizResult: state.lastQuizResult,
-        mistakes: state.mistakes,
-        mistakeCounts: state.mistakeCounts,
-        recentResults: state.recentResults,
-        dailyResult: state.dailyResult,
+        points: state.points,
+        currentStreak: state.currentStreak,
+        bestStreak: state.bestStreak,
+        totalAnswered: state.totalAnswered,
+        totalCorrect: state.totalCorrect,
         dailyStreak: state.dailyStreak,
         lastActiveDate: state.lastActiveDate,
+        completedModules: state.completedModules,
+        unlockedPhilosophers: state.unlockedPhilosophers,
+        mistakes: state.mistakes,
+        recentResults: state.recentResults,
+        lastQuizResult: state.lastQuizResult,
+        dailyResult: state.dailyResult,
+        currentAttempt: state.currentAttempt,
         quizMode: state.quizMode,
-        currentQuiz: state.currentQuiz,
+        onboardingDismissed: state.onboardingDismissed,
       }),
-      // Keep new fields working for users who persisted the old shape.
       merge: (persisted, current) => {
-        const saved = (persisted ?? {}) as Partial<GameState>;
-        const mistakeCounts =
-          saved.mistakeCounts ??
-          Object.fromEntries((saved.mistakes ?? []).map((key) => [key, 1]));
+        const saved = (persisted ?? {}) as Record<string, unknown>;
+        const rest = { ...saved };
+        const completedQuizzes = rest.completedQuizzes;
+        const currentQuiz = rest.currentQuiz;
+        delete rest.xp;
+        delete rest.mistakeCounts;
+        delete rest.completedQuizzes;
+        delete rest.currentQuiz;
 
-        return { ...current, ...saved, mistakeCounts };
+        return {
+          ...current,
+          ...rest,
+          points:
+            typeof saved.points === "number" ? saved.points : current.points,
+          completedModules:
+            (saved.completedModules as string[] | undefined) ??
+            (completedQuizzes as string[] | undefined) ??
+            current.completedModules,
+          mistakes: normalizeMistakes(saved) ?? current.mistakes,
+          currentAttempt:
+            normalizeAttempt(saved.currentAttempt ?? currentQuiz) ??
+            current.currentAttempt,
+          lastQuizResult:
+            normalizeResult(saved.lastQuizResult) ?? current.lastQuizResult,
+          onboardingDismissed:
+            saved.onboardingDismissed === true ||
+            current.onboardingDismissed,
+        };
       },
     },
   ),
 );
+

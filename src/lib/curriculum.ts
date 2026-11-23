@@ -48,7 +48,7 @@ export const TOTAL_QUESTIONS = ALL_MODULES.reduce(
 
 export const TOTAL_MODULES = ALL_MODULES.length;
 
-export const LEVEL_SLUG = Object.fromEntries(
+const LEVEL_SLUG = Object.fromEntries(
   LEVEL_CONFIG.map((level) => [level.id, level.slug]),
 ) as Record<LevelId, string>;
 

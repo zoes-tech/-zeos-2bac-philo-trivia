@@ -1,6 +1,5 @@
 import { GameIsland } from "@/components/game/GameIsland";
 import { DashboardIsland } from "@/components/game/DashboardIsland";
-import { AppProviders } from "@/components/site/AppProviders";
 import { LandingPage } from "@/components/site/LandingPage";
 
 export default function HomePage() {
@@ -12,9 +11,7 @@ export default function HomePage() {
       interactive={
         <>
           <DashboardIsland />
-          <AppProviders>
-            <GameIsland />
-          </AppProviders>
+          <GameIsland />
         </>
       }
     />

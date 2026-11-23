@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { BookOpen, ChevronLeft } from "lucide-react";
-import { LEVEL_COPY } from "@/i18n/curriculum-copy";
+import { getLevelCopy } from "@/i18n/curriculum-copy";
 import { LEVELS } from "@/lib/curriculum";
 import { useGameStore } from "@/store/useStore";
 import { cn } from "@/lib/utils";
@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
  * the level map, the landing pages and the JSON-LD cannot drift apart.
  */
 export function LevelMap() {
-  const { currentLevel, setLevel } = useGameStore();
-  const copy = LEVEL_COPY.ar;
+  const currentLevel = useGameStore((state) => state.currentLevel);
+  const setLevel = useGameStore((state) => state.setLevel);
 
   return (
     <div className="relative mx-auto flex w-full max-w-lg flex-col items-center gap-8 py-10">
@@ -57,10 +57,10 @@ export function LevelMap() {
                     isActive ? "text-cyan-300" : "text-slate-300",
                   )}
                 >
-                  {copy[level.id].title}
+                  {getLevelCopy("ar", level.id).title}
                 </h3>
                 <p className="text-sm text-slate-400">
-                  {copy[level.id].description}
+                  {getLevelCopy("ar", level.id).description}
                 </p>
               </div>
             </div>

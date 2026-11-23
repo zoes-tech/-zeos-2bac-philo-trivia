@@ -1,4 +1,4 @@
-export interface AnswerScoreInput {
+interface AnswerScoreInput {
   isCorrect: boolean;
   timeTaken?: number;
   currentStreak: number;
@@ -14,7 +14,7 @@ export interface AnswerScoreBreakdown {
   speedTier: 'instant' | 'quick' | 'steady' | 'missed';
 }
 
-export const BASE_POINTS = 100;
+const BASE_POINTS = 100;
 
 export const calculateStreakMultiplier = (streak: number): number => {
   if (streak >= 15) return 2.5;
@@ -24,7 +24,7 @@ export const calculateStreakMultiplier = (streak: number): number => {
   return 1.0;
 };
 
-export const calculateSpeedBonus = (timeTaken?: number): { bonus: number; tier: AnswerScoreBreakdown['speedTier'] } => {
+const calculateSpeedBonus = (timeTaken?: number): { bonus: number; tier: AnswerScoreBreakdown['speedTier'] } => {
   if (timeTaken === undefined || timeTaken === null) return { bonus: 0, tier: 'steady' };
   if (timeTaken <= 4) return { bonus: 50, tier: 'instant' };
   if (timeTaken <= 8) return { bonus: 25, tier: 'quick' };
@@ -60,6 +60,19 @@ export const calculateAnswerScore = ({ isCorrect, timeTaken, currentStreak }: An
     speedTier,
   };
 };
+
+const RANKS = [
+  { min: 0, max: 1000, rank: "متأمل مبتدئ", emoji: "📜" },
+  { min: 1001, max: 5000, rank: "تلميذ سقراط", emoji: "🦉" },
+  { min: 5001, max: 20000, rank: "فيلسوف ناشئ", emoji: "🧠" },
+  { min: 20001, max: Infinity, rank: "حكيم الأطلس", emoji: "💎" },
+] as const;
+
+export function getRankInfo(points: number): { rank: string; emoji: string } {
+  return (
+    RANKS.find((item) => points >= item.min && points <= item.max) ?? RANKS[0]
+  );
+}
 
 export const getMasteryLabel = (accuracy: number): { label: string; emoji: string; tone: string } => {
   if (accuracy >= 90) return { label: 'إتقان ممتاز', emoji: '🏆', tone: 'text-yellow-300' };

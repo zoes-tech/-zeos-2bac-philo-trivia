@@ -19,10 +19,6 @@
   --color-brand-violet: #8b5cf6;
   --color-brand-blue: #3b82f6;
   
-  /* Retaining some semantic mappings if needed, but remapping them */
-  --color-parchment: var(--color-background); 
-  --color-ink: var(--color-text-primary);
-  --color-gold: var(--color-brand-cyan); /* Rebranding gold to cyan for sci-fi feel, or keeping gold? Let's use vibrant colors */
 }
 
 :root {

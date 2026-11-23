@@ -20,7 +20,6 @@ export function GlassCard({ children, className, hoverEffect = false, ...props }
             )}
             {...props}
         >
-            {/* Glossy reflection effect */}
             <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] bg-gradient-to-br from-transparent via-white/5 to-transparent rotate-45 pointer-events-none" />
 
             <div className="relative z-10">

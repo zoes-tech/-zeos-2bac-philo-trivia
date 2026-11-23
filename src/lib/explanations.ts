@@ -5,6 +5,7 @@ import humanCondition from "@/data/explanations/human-condition.json";
 import politics from "@/data/explanations/politics.json";
 import knowledge from "@/data/explanations/knowledge.json";
 import morality from "@/data/explanations/morality.json";
+import { contentKey } from "@/lib/content-key";
 
 /**
  * Explanations live outside the question banks so they can be reviewed,
@@ -25,7 +26,5 @@ export function getExplanation(
   moduleId: string,
   questionId: string,
 ): string | undefined {
-  return EXPLANATIONS[`${moduleId}:${questionId}`];
+  return EXPLANATIONS[contentKey(moduleId, questionId)];
 }
-
-export const EXPLANATION_COUNT = Object.keys(EXPLANATIONS).length;

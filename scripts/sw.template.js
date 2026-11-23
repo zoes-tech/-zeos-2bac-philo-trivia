@@ -1,19 +1,15 @@
-// Offline support for the static site.
-//
-// This file is served from the domain root, so its scope is the whole site.
-// Bump CACHE_VERSION on every deploy that changes cached markup.
-const CACHE_VERSION = "zoes-philo-v1";
+// Offline support for the static site, generated at build time.
+const CACHE_VERSION = "__CACHE_VERSION__";
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 const ASSET_CACHE = `${CACHE_VERSION}-assets`;
-const PRECACHE_PAGES = ["/", "/fr/", "/en/", "/manifest.json"];
+const PRECACHE_PAGES = __PRECACHE_PAGES__;
+const FALLBACK_RULES = __FALLBACK_RULES__;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(PAGE_CACHE);
-      await Promise.allSettled(
-        PRECACHE_PAGES.map((url) => cache.add(url)),
-      );
+      await Promise.allSettled(PRECACHE_PAGES.map((url) => cache.add(url)));
       await self.skipWaiting();
     })(),
   );
@@ -53,6 +49,11 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(staleWhileRevalidate(request, ASSET_CACHE));
 });
 
+function fallbackFor(pathname) {
+  const rule = FALLBACK_RULES.find(([prefix]) => pathname.startsWith(prefix));
+  return rule ? rule[1] : "/";
+}
+
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
@@ -74,7 +75,7 @@ async function networkFirst(request) {
     const cached = await cache.match(request);
     if (cached) return cached;
 
-    const fallback = await cache.match("/");
+    const fallback = await cache.match(fallbackFor(new URL(request.url).pathname));
     if (fallback) return fallback;
 
     return new Response("Offline", {

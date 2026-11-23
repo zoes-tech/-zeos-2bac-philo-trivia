@@ -21,7 +21,7 @@ interface PageMeta {
   alternates?: Record<string, string>;
 }
 
-export function buildPageMetadata({
+function buildPageMetadata({
   locale,
   path,
   title,

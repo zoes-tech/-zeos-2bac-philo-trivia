@@ -7,15 +7,6 @@ export interface Question {
   category?: string;
 }
 
-/** A question with the module it came from (ids are only unique per module). */
-export interface QuizQuestion extends Question {
-  moduleId: string;
-}
-
-export type QuizKind = "module" | "daily" | "review";
-
-export type QuizMode = "timed" | "study";
-
 export interface Philosopher {
   id: string;
   name: string;
@@ -24,7 +15,7 @@ export interface Philosopher {
   quote: string;
 }
 
-export interface Concept {
+interface Concept {
   id: string;
   name: string;
   description: string;

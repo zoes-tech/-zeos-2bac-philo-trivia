@@ -18,7 +18,7 @@ import { getMasteryLabel } from "@/lib/scoring";
 import { mistakeCountLabel, questionCountLabel } from "@/i18n/labels";
 import { getModulePath } from "@/lib/curriculum";
 import { cn } from "@/lib/utils";
-import type { QuizResult } from "@/store/useStore";
+import type { QuizResult } from "@/types/quiz";
 
 interface QuizResultCardProps {
   result: QuizResult;
@@ -111,9 +111,9 @@ export function QuizResultCard({
           <div className="rounded-xl border border-white/10 bg-white/5 p-2">
             <Zap className="mx-auto mb-1 h-3 w-3 text-cyan-300" />
             <div className="text-sm font-bold text-white">
-              +{result.xpEarned}
+              +{result.pointsEarned}
             </div>
-            <div className="text-xs text-gray-400">XP</div>
+            <div className="text-xs text-gray-400">نقطة</div>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-2">
             <BookOpenCheck className="mx-auto mb-1 h-3 w-3 text-red-300" />

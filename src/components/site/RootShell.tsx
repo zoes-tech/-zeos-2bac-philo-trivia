@@ -8,6 +8,7 @@ import { HTML_LANG, TEXT_DIR, type Locale } from "@/i18n/locales";
 import { SITE_CONTENT } from "@/i18n/site-content";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { MotionProvider } from "@/components/site/MotionProvider";
 
 /**
  * Shared <html>/<body> shell. Each locale has its own root layout so that
@@ -38,9 +39,11 @@ export function RootShell({
           {SITE_CONTENT[locale].chrome.skip}
         </a>
         <BackgroundOrbs />
-        <SiteHeader locale={locale} />
-        <main id="main">{children}</main>
-        <SiteFooter locale={locale} />
+        <MotionProvider>
+          <SiteHeader locale={locale} />
+          <main id="main">{children}</main>
+          <SiteFooter locale={locale} />
+        </MotionProvider>
         <CloudflareAnalytics />
         <ServiceWorkerRegistrar />
       </body>

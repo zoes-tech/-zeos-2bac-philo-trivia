@@ -1,27 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, CheckCircle2, Flame, Trophy, X, Zap } from "lucide-react";
-import { getModuleById, getModulePath } from "@/lib/curriculum";
-import { getExplanation } from "@/lib/explanations";
+import { Flame, Trophy, Zap } from "lucide-react";
 import { cn, shuffleArray } from "@/lib/utils";
 import { LiquidButton } from "@/components/ui/LiquidButton";
 import { GlassCard } from "@/components/ui/GlassCard";
-import type { QuizMode, QuizQuestion } from "@/types";
+import { QuizTimer } from "@/components/game/quiz/QuizTimer";
+import { AnswerOptions } from "@/components/game/quiz/AnswerOptions";
+import { ConceptFeedback } from "@/components/game/quiz/ConceptFeedback";
+import type { QuizMode, QuizQuestion, QuizReviewItem } from "@/types/quiz";
 import {
-  useScoring,
-  useScoreAnimation,
-  useStreakAnimation,
-} from "@/contexts/ScoringProvider";
-import type { QuizReviewItem } from "@/store/useStore";
+  calculateStreakMultiplier,
+  getRankInfo,
+  type AnswerScoreBreakdown,
+} from "@/lib/scoring";
+import { useScoreAnimation, useStreakAnimation } from "@/hooks/use-animations";
+import {
+  BASE_TIME_LIMIT,
+  NEXT_DELAY_MS,
+  TIME_BONUS_SECONDS,
+} from "@/lib/quiz-rules";
+import { useGameStore } from "@/store/useStore";
 
 interface QuizCardProps {
   question: QuizQuestion;
-  moduleId?: string;
   mode?: QuizMode;
-  onAnswer: (answer: QuizReviewItem) => void;
+  onAnswer: (
+    answer: QuizReviewItem,
+    timeTaken?: number,
+  ) => AnswerScoreBreakdown | null;
   /** Called once, ~1.4s after an answer, so the parent can advance. */
   onNext?: () => void;
   currentIndex?: number;
@@ -38,7 +46,6 @@ interface QuizCardProps {
  */
 export function QuizCard({
   question,
-  moduleId,
   mode = "timed",
   onAnswer,
   onNext,
@@ -46,10 +53,9 @@ export function QuizCard({
   total,
   score,
   category,
-  timeLimit = 20,
+  timeLimit = BASE_TIME_LIMIT,
 }: QuizCardProps) {
   const timed = mode === "timed";
-  const resolvedModuleId = moduleId ?? question.moduleId;
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -74,8 +80,11 @@ export function QuizCard({
     [question, shuffledOptions],
   );
 
-  const { submitAnswer, currentStreak, multiplier, isGodMode, rank, rankEmoji } =
-    useScoring();
+  const currentStreak = useGameStore((state) => state.currentStreak);
+  const points = useGameStore((state) => state.points);
+  const multiplier = calculateStreakMultiplier(currentStreak);
+  const isGodMode = currentStreak >= 10;
+  const rank = getRankInfo(points);
   const displayScore = useScoreAnimation(score || 0);
   const { displayStreak, isPopping } = useStreakAnimation(currentStreak);
 
@@ -89,7 +98,7 @@ export function QuizCard({
 
   const buildReviewItem = useCallback(
     (selectedIndex: number | null, isCorrect: boolean): QuizReviewItem => ({
-      moduleId: resolvedModuleId,
+      moduleId: question.moduleId,
       questionId: question.id,
       question: question.question,
       category: question.category,
@@ -98,12 +107,12 @@ export function QuizCard({
       correctAnswer: shuffledOptions[shuffledCorrectIndex],
       isCorrect,
     }),
-    [resolvedModuleId, question, shuffledCorrectIndex, shuffledOptions],
+    [question, shuffledCorrectIndex, shuffledOptions],
   );
 
   const scheduleNext = useCallback(() => {
     if (nextTimeoutRef.current) window.clearTimeout(nextTimeoutRef.current);
-    nextTimeoutRef.current = window.setTimeout(() => onNext?.(), 1400);
+    nextTimeoutRef.current = window.setTimeout(() => onNext?.(), NEXT_DELAY_MS);
   }, [onNext]);
 
   useEffect(
@@ -129,7 +138,6 @@ export function QuizCard({
       if (remaining > 0 || answeredRef.current) return;
       window.clearInterval(timerId);
       answeredRef.current = true;
-      submitAnswer(false, timeLimit);
       onAnswer(buildReviewItem(selectedOption, false));
       setTimedOut(true);
       setIsSubmitted(true);
@@ -141,7 +149,6 @@ export function QuizCard({
     timed,
     isSubmitted,
     selectedOption,
-    submitAnswer,
     onAnswer,
     timeLimit,
     buildReviewItem,
@@ -167,22 +174,23 @@ export function QuizCard({
       ? (Date.now() - questionStartRef.current) / 1000
       : undefined;
     const isCorrect = selectedOption === shuffledCorrectIndex;
+    const breakdown = onAnswer(
+      buildReviewItem(selectedOption, isCorrect),
+      timeTaken,
+    );
 
     if (isCorrect) {
-      const breakdown = submitAnswer(true, timeTaken);
-      setEarnedPoints(breakdown.totalPoints);
+      setEarnedPoints(breakdown?.totalPoints ?? 0);
       if (timed) {
-        // Reward fast, correct answers with extra time for the next question.
-        deadlineRef.current += 3000;
-        setTimeLeft((prev) => prev + 3);
+        deadlineRef.current += TIME_BONUS_SECONDS * 1000;
+        setTimeLeft((prev) => prev + TIME_BONUS_SECONDS);
       }
     } else {
-      submitAnswer(false, timeTaken);
+      setEarnedPoints(0);
     }
 
     setTimedOut(false);
     setIsSubmitted(true);
-    onAnswer(buildReviewItem(selectedOption, isCorrect));
     // Correct answers flow on; a mistake stays on screen so the concept note
     // and the correct answer can actually be read.
     if (isCorrect) scheduleNext();
@@ -191,7 +199,6 @@ export function QuizCard({
     selectedOption,
     shuffledCorrectIndex,
     timed,
-    submitAnswer,
     onAnswer,
     buildReviewItem,
     scheduleNext,
@@ -205,10 +212,9 @@ export function QuizCard({
     const timeTaken = timed
       ? (Date.now() - questionStartRef.current) / 1000
       : undefined;
-    submitAnswer(false, timeTaken);
+    onAnswer(buildReviewItem(null, false), timeTaken);
     setIsSubmitted(true);
     setTimedOut(false);
-    onAnswer(buildReviewItem(null, false));
   };
 
   // Keyboard shortcuts: 1-4 selects, Enter confirms. Refs keep the listener
@@ -244,19 +250,8 @@ export function QuizCard({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isSubmitted, shuffledOptions.length]);
 
-  const timerPercent = Math.min(100, Math.round((timeLeft / timeLimit) * 100));
   const isCorrectAnswer = selectedOption === shuffledCorrectIndex;
   const showNext = isSubmitted && !isCorrectAnswer;
-
-  const ownerModule = getModuleById(question.moduleId);
-  const concept =
-    ownerModule?.concepts.find((item) => item.name === question.category) ??
-    (question.category ? undefined : ownerModule?.concepts[0]);
-  const conceptNote =
-    concept && concept.description && concept.description !== concept.name
-      ? concept.description
-      : null;
-  const explanation = getExplanation(question.moduleId, question.id);
   const progress =
     currentIndex !== undefined && total
       ? Math.round(((currentIndex + 1) / total) * 100)
@@ -327,57 +322,12 @@ export function QuizCard({
           <div className="flex items-center gap-1 text-xs text-gray-400">
             <Trophy aria-hidden="true" className="h-3 w-3" />
             <span>
-              {rankEmoji} {rank}
+              {rank.emoji} {rank.rank}
             </span>
           </div>
         </div>
 
-        {timed ? (
-          <div className="mb-4">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs text-gray-400">الوقت المتبقي</span>
-              <span
-                className={cn(
-                  "text-sm font-bold",
-                  timeLeft <= 3
-                    ? "text-red-400 animate-pulse"
-                    : timeLeft <= 5
-                      ? "text-yellow-400"
-                      : "text-cyan-400",
-                )}
-              >
-                {timeLeft}ث
-              </span>
-            </div>
-            <div
-              role="progressbar"
-              aria-label="الوقت المتبقي"
-              aria-valuemin={0}
-              aria-valuemax={Math.max(timeLimit, timeLeft)}
-              aria-valuenow={timeLeft}
-              className="h-2 overflow-hidden rounded-full bg-gray-700"
-            >
-              <motion.div
-                initial={{ width: "100%" }}
-                animate={{ width: `${timerPercent}%` }}
-                transition={{ duration: 0.3 }}
-                className={cn(
-                  "h-full rounded-full",
-                  timeLeft <= 3
-                    ? "bg-gradient-to-r from-red-500 to-red-600"
-                    : timeLeft <= 5
-                      ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                      : "bg-gradient-to-r from-cyan-500 to-blue-500",
-                )}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-200">
-            <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-            وضع الدراسة: بدون مؤقت وبدون مكافأة سرعة
-          </div>
-        )}
+        <QuizTimer timed={timed} timeLeft={timeLeft} timeLimit={timeLimit} />
 
         <AnimatePresence>
           {isGodMode && (
@@ -398,64 +348,13 @@ export function QuizCard({
           {question.question}
         </h3>
 
-        <div className="space-y-4">
-          {shuffledOptions.map((option, index) => {
-            let optionClass =
-              "glass-button bg-white/5 border-white/10 text-gray-200 hover:bg-white/10";
-
-            if (selectedOption === index && !isSubmitted) {
-              optionClass =
-                "bg-cyan-500/20 border-cyan-500 text-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.3)]";
-            }
-
-            if (isSubmitted) {
-              if (index === shuffledCorrectIndex) {
-                optionClass =
-                  "bg-green-500/20 border-green-500 text-green-100 shadow-[0_0_15px_rgba(34,197,94,0.3)]";
-              } else if (
-                index === selectedOption &&
-                index !== shuffledCorrectIndex
-              ) {
-                optionClass = "bg-red-500/20 border-red-500 text-red-100";
-              } else {
-                optionClass = "opacity-40 cursor-default";
-              }
-            }
-
-            return (
-              <motion.button
-                key={index}
-                whileTap={!isSubmitted ? { scale: 0.98 } : {}}
-                onClick={() => handleSelect(index)}
-                aria-pressed={selectedOption === index}
-                className={cn(
-                  "relative w-full overflow-hidden rounded-xl border p-4 text-right font-medium transition-all",
-                  optionClass,
-                  isSubmitted && "cursor-default",
-                )}
-                disabled={isSubmitted}
-              >
-                <div className="relative z-10 flex items-center justify-between">
-                  <span>{option}</span>
-                  {isSubmitted && index === shuffledCorrectIndex && (
-                    <Check
-                      aria-hidden="true"
-                      className="ml-2 h-5 w-5 text-green-400"
-                    />
-                  )}
-                  {isSubmitted &&
-                    index === selectedOption &&
-                    index !== shuffledCorrectIndex && (
-                      <X
-                        aria-hidden="true"
-                        className="ml-2 h-5 w-5 text-red-400"
-                      />
-                    )}
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
+        <AnswerOptions
+          options={shuffledOptions}
+          selectedOption={selectedOption}
+          correctIndex={shuffledCorrectIndex}
+          isSubmitted={isSubmitted}
+          onSelect={handleSelect}
+        />
 
         <p aria-live="polite" className="sr-only">
           {isSubmitted
@@ -466,34 +365,11 @@ export function QuizCard({
         </p>
 
         {showNext && (
-          <div className="mt-4 rounded-xl border border-orange-500/20 bg-orange-500/10 p-3 text-right">
-            <p className="text-xs font-bold text-orange-100">
-              {concept ? `المفهوم: ${concept.name}` : "راجع هذا المحور"}
-            </p>
-            {conceptNote && (
-              <p className="mt-1 text-[11px] leading-relaxed text-orange-100/80">
-                {conceptNote}
-              </p>
-            )}
-            {ownerModule && (
-              <Link
-                href={getModulePath(question.moduleId) ?? "/#curriculum"}
-                className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-orange-200 transition-colors hover:text-white"
-              >
-                راجع المحور كاملاً
-                <ArrowLeft aria-hidden="true" className="h-3 w-3" />
-              </Link>
-            )}
-          </div>
-        )}
-
-        {showNext && explanation && (
-          <div className="mt-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-3 text-right">
-            <p className="text-[11px] font-bold text-cyan-200">شرح مبسط</p>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-300">
-              {explanation}
-            </p>
-          </div>
+          <ConceptFeedback
+            moduleId={question.moduleId}
+            questionId={question.id}
+            category={question.category}
+          />
         )}
 
         <div className="mt-8 flex gap-2">

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   ArrowLeft,
   CalendarCheck,
@@ -14,84 +13,47 @@ import {
   X,
 } from "lucide-react";
 import { DAILY_SIZE, localDateKey } from "@/lib/daily";
-import { MODULES_BY_LEVEL, TOTAL_MODULES, TOTAL_QUESTIONS } from "@/lib/curriculum";
+import { TOTAL_MODULES, TOTAL_QUESTIONS } from "@/lib/curriculum";
+import { questionCountLabel } from "@/i18n/labels";
+import { recommendedModule } from "@/lib/recommendation";
+import { scrollToId } from "@/lib/scroll";
 import { useGameStore } from "@/store/useStore";
 import { cn } from "@/lib/utils";
 
-function focusQuiz() {
-  requestAnimationFrame(() => {
-    document
-      .getElementById("play")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-}
-
 /**
- * The "return visit" surface: daily challenge, mistake review, resume and the
- * numbers that make progress feel real. Everything is local and client-only;
- * a skeleton is rendered during hydration so the server HTML stays stable.
+ * The return-visit surface: daily challenge, mistake review, resume and the
+ * numbers that make progress feel real.
  */
 export function RetentionDashboard() {
-  const [introDismissed, setIntroDismissed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem("zoes-onboarding") === "1";
-    } catch {
-      return false;
-    }
-  });
-
-  const currentQuiz = useGameStore((state) => state.currentQuiz);
+  const currentLevel = useGameStore((state) => state.currentLevel);
+  const currentAttempt = useGameStore((state) => state.currentAttempt);
   const dailyResult = useGameStore((state) => state.dailyResult);
   const dailyStreak = useGameStore((state) => state.dailyStreak);
   const mistakes = useGameStore((state) => state.mistakes);
-  const recentResults = useGameStore((state) => state.recentResults);
-  const completedQuizzes = useGameStore((state) => state.completedQuizzes);
+  const completedModules = useGameStore((state) => state.completedModules);
+  const totalAnswered = useGameStore((state) => state.totalAnswered);
+  const totalCorrect = useGameStore((state) => state.totalCorrect);
   const quizMode = useGameStore((state) => state.quizMode);
-  const startDailyChallenge = useGameStore((state) => state.startDailyChallenge);
-  const startMistakeReview = useGameStore((state) => state.startMistakeReview);
-  const startQuiz = useGameStore((state) => state.startQuiz);
-  const discardQuiz = useGameStore((state) => state.discardQuiz);
+  const onboardingDismissed = useGameStore(
+    (state) => state.onboardingDismissed,
+  );
+  const startDailyChallenge = useGameStore(
+    (state) => state.startDailyChallenge,
+  );
+  const startReview = useGameStore((state) => state.startReview);
+  const startModuleQuiz = useGameStore((state) => state.startModuleQuiz);
   const setQuizMode = useGameStore((state) => state.setQuizMode);
+  const dismissOnboarding = useGameStore((state) => state.dismissOnboarding);
 
   const today = localDateKey();
   const dailyDone = dailyResult?.date === today;
-  const answered = recentResults.reduce((sum, item) => sum + item.total, 0);
-  const correct = recentResults.reduce((sum, item) => sum + item.correct, 0);
-  const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+  const mistakeCount = Object.keys(mistakes).length;
+  const accuracy =
+    totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
   const isReturning =
-    dailyStreak > 0 || recentResults.length > 0 || completedQuizzes.length > 0;
-  const showIntro = !isReturning && !introDismissed;
-
-  const dismissIntro = () => {
-    setIntroDismissed(true);
-    try {
-      localStorage.setItem("zoes-onboarding", "1");
-    } catch {
-      // Ignore storage failures; the panel just reappears next visit.
-    }
-  };
-
-  const bacModules = MODULES_BY_LEVEL["2nd-bac"];
-  // Suggest the smallest unfinished module first: an 86-question quiz is a
-  // poor "next step" for someone who just finished one.
-  const recommended =
-    [...bacModules]
-      .filter((item) => !completedQuizzes.includes(item.id))
-      .sort(
-        (a, b) => (a.quiz?.length ?? 0) - (b.quiz?.length ?? 0),
-      )[0] ?? bacModules[0];
-
-  const startRecommended = () => {
-    if (!recommended.quiz?.length) return;
-    startQuiz({
-      kind: "module",
-      moduleId: recommended.id,
-      moduleTitle: recommended.title,
-      questions: recommended.quiz,
-    });
-    focusQuiz();
-  };
+    dailyStreak > 0 || totalAnswered > 0 || completedModules.length > 0;
+  const showIntro = !isReturning && !onboardingDismissed;
+  const recommended = recommendedModule(currentLevel, completedModules);
 
   return (
     <section
@@ -161,7 +123,7 @@ export function RetentionDashboard() {
               </div>
               <button
                 type="button"
-                onClick={dismissIntro}
+                onClick={() => dismissOnboarding()}
                 aria-label="إغلاق الشرح"
                 className="rounded-lg p-1 text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
               >
@@ -189,10 +151,7 @@ export function RetentionDashboard() {
             </div>
             <button
               type="button"
-              onClick={() => {
-                startDailyChallenge();
-                focusQuiz();
-              }}
+              onClick={() => startDailyChallenge()}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 text-xs font-bold text-white shadow-[0_0_18px_rgba(6,182,212,0.3)] transition-shadow hover:shadow-[0_0_26px_rgba(6,182,212,0.5)]"
             >
               {dailyDone ? (
@@ -214,28 +173,25 @@ export function RetentionDashboard() {
                 راجع أخطاءك
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                {mistakes.length > 0
-                  ? `بنك أخطائك: ${mistakes.length}. تخرج الأسئلة منه عندما تجيب صحيحاً.`
+                {mistakeCount > 0
+                  ? `بنك أخطائك: ${mistakeCount}. تخرج الأسئلة منه عندما تجيب صحيحاً.`
                   : "لا توجد أخطاء محفوظة بعد. كل خطأ في أي اختبار سيُضاف هنا تلقائياً."}
               </p>
             </div>
             <button
               type="button"
-              onClick={() => {
-                startMistakeReview();
-                focusQuiz();
-              }}
-              disabled={mistakes.length === 0}
+              onClick={() => startReview()}
+              disabled={mistakeCount === 0}
               className={cn(
                 "inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-xs font-bold transition-colors",
-                mistakes.length > 0
+                mistakeCount > 0
                   ? "border-purple-500/30 bg-purple-500/10 text-purple-100 hover:bg-purple-500/20"
                   : "cursor-not-allowed border-white/5 bg-white/[0.02] text-zinc-600",
               )}
             >
               <RotateCcw aria-hidden="true" className="h-4 w-4" />
-              {mistakes.length > 0
-                ? `راجع أخطاءك (${Math.min(mistakes.length, 20)})`
+              {mistakeCount > 0
+                ? `راجع أخطاءك (${Math.min(mistakeCount, 20)})`
                 : "لا أخطاء للمراجعة"}
             </button>
           </article>
@@ -244,37 +200,28 @@ export function RetentionDashboard() {
             <div>
               <h3 className="flex items-center gap-2 text-sm font-bold text-white">
                 <Target aria-hidden="true" className="h-4 w-4 text-green-300" />
-                {currentQuiz ? "اختبار غير مكتمل" : "التالي المقترح"}
+                {currentAttempt ? "اختبار غير مكتمل" : "التالي المقترح"}
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-zinc-400">
-                {currentQuiz
-                  ? `${currentQuiz.moduleTitle} — السؤال ${currentQuiz.currentIndex + 1} من ${currentQuiz.total}. تقدمك محفوظ.`
-                  : `${recommended.title} — ${recommended.quiz?.length ?? 0} سؤالاً. محور أساسي في الثانية باك.`}
+                {currentAttempt
+                  ? `${currentAttempt.moduleTitle} — السؤال ${currentAttempt.currentIndex + 1} من ${currentAttempt.total}. تقدمك محفوظ.`
+                  : `${recommended.title} — ${questionCountLabel("ar", recommended.quiz?.length ?? 0)}.`}
               </p>
             </div>
 
-            {currentQuiz ? (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={focusQuiz}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 text-xs font-bold text-white"
-                >
-                  متابعة الاختبار
-                  <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={discardQuiz}
-                  className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-zinc-400 transition-colors hover:text-white"
-                >
-                  تجاهل
-                </button>
-              </div>
+            {currentAttempt ? (
+              <button
+                type="button"
+                onClick={() => scrollToId("play")}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-2 text-xs font-bold text-white"
+              >
+                متابعة الاختبار
+                <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              </button>
             ) : (
               <button
                 type="button"
-                onClick={startRecommended}
+                onClick={() => startModuleQuiz(recommended.id)}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/25 bg-green-500/10 px-4 py-2 text-xs font-bold text-green-100 transition-colors hover:bg-green-500/20"
               >
                 <Play aria-hidden="true" className="h-4 w-4" />
@@ -298,13 +245,13 @@ export function RetentionDashboard() {
               <div className="rounded-lg bg-black/20 p-2">
                 <dt className="text-[10px] text-zinc-500">أجوبة</dt>
                 <dd className="mt-1 text-sm font-bold text-white">
-                  {answered}
+                  {totalAnswered}
                 </dd>
               </div>
               <div className="rounded-lg bg-black/20 p-2">
                 <dt className="text-[10px] text-zinc-500">محاور</dt>
                 <dd className="mt-1 text-sm font-bold text-white">
-                  {completedQuizzes.length}
+                  {completedModules.length}
                 </dd>
               </div>
             </dl>

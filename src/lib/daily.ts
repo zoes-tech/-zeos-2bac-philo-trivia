@@ -1,5 +1,5 @@
 import { LEVELS, MODULES_BY_LEVEL } from "@/lib/curriculum";
-import type { QuizQuestion } from "@/types";
+import type { QuizQuestion } from "@/types/quiz";
 
 export const DAILY_SIZE = 10;
 
@@ -15,11 +15,6 @@ export function yesterdayKey(): string {
   const date = new Date();
   date.setDate(date.getDate() - 1);
   return localDateKey(date);
-}
-
-/** Module ids and question ids are only unique together. */
-export function mistakeKey(moduleId: string, questionId: string): string {
-  return `${moduleId}:${questionId}`;
 }
 
 /** Small deterministic PRNG so the daily set is identical for everyone. */

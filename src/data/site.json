@@ -3,6 +3,7 @@
   "name": "رحلة الفيلسوف",
   "nameEn": "Philosopher's Journey",
   "brand": "Zoes Tech",
+  "description": "تطبيق عربي مجاني لمراجعة واختبار دروس الفلسفة لتلاميذ الباكالوريا بالمغرب، مع نقاط ومراجعة للأخطاء.",
   "github": "https://github.com/zoes-tech/-zeos-2bac-philo-trivia",
   "ogImage": "/og.png",
   "ogWidth": 1200,
