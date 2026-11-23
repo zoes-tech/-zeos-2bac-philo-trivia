@@ -75,6 +75,10 @@ authoritative:
 This is also the prerequisite for expanding `concepts[].content` into real lesson
 summaries.
 
+Internal second-pass audits for the 2BAC modules are recorded in
+[`docs/reviews/`](reviews/README.md). They document corrections and open
+questions; they do not replace the teacher review above.
+
 ## Adding a module
 
 1. Add it to the appropriate curriculum JSON.
