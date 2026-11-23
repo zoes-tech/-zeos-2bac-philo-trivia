@@ -3,6 +3,44 @@
 Everything here is free-tier friendly: the site is static, so Pages serves files
 from its CDN and there is no compute bill.
 
+## Current deployment (2026-11-23)
+
+| Item | Value |
+| --- | --- |
+| Cloudflare project | `zoes-philo` |
+| Production URL | <https://zoes-philo.pages.dev> |
+| First deployment | manual `wrangler pages deploy out` from the maintainer machine |
+| Status | live; headers, sitemap, `llms.txt` and security.txt verified |
+
+The project was created with `wrangler pages project create zoes-philo
+--production-branch main --force`. The `--force` bypasses Wrangler's new
+delegation of Pages to Workers and creates a classic Pages project. **Do not pass
+`--force` again**: once the project exists, `pages deploy` runs directly against
+it.
+
+### CI blockers
+
+The GitHub workflow is committed but has not run yet:
+
+1. the current GitHub token cannot push to `zoes-tech/-zeos-2bac-philo-trivia`
+   (403 on push) and cannot read Actions secrets/variables (403);
+2. `CLOUDFLARE_API_TOKEN` is not set in the repository.
+
+To finish the automation, from an account with write access:
+
+1. push `chore/cloudflare-migration-seo` (the token needs `Contents: write` and
+   `Workflows: write`);
+2. add the repository secret `CLOUDFLARE_API_TOKEN` (custom token, **Account →
+   Cloudflare Pages → Edit** only) and `CLOUDFLARE_ACCOUNT_ID`;
+3. merge to `main` or run **Actions → Deploy to Cloudflare Pages → Run workflow**.
+
+Until then, deploys are manual:
+
+```bash
+npm run build
+npx wrangler pages deploy out --project-name zoes-philo --branch main
+```
+
 ## How the deploy works
 
 ```text
