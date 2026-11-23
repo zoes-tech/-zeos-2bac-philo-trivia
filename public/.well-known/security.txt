@@ -1,0 +1,4 @@
+Contact: https://github.com/zoes-tech/-zeos-2bac-philo-trivia/security/advisories/new
+Expires: 2027-11-23T00:00:00Z
+Preferred-Languages: ar, fr, en
+Policy: https://github.com/zoes-tech/-zeos-2bac-philo-trivia/blob/main/SECURITY.md

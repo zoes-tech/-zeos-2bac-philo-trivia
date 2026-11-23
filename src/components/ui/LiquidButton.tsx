@@ -37,9 +37,6 @@ export function LiquidButton({ children, className, variant = "primary", ...prop
                 getGradient()
             )} />
 
-            {/* Liquid overlay effect */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-30 bg-[url('/noise.png')] mix-blend-overlay transition-opacity" />
-
             <span className="relative z-10 flex items-center justify-center gap-2">
                 {children}
             </span>

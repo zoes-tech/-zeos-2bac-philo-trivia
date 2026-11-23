@@ -1,0 +1,5 @@
+# Cloudflare Pages project configuration.
+# Static export only: `npm run build` writes `out/`, which Pages serves as-is.
+name = "zoes-philo"
+compatibility_date = "2026-05-01"
+pages_build_output_dir = "out"

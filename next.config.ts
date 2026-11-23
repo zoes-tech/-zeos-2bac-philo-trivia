@@ -1,23 +1,18 @@
 import type { NextConfig } from "next";
-import withPWA from "@ducanh2912/next-pwa";
-import path from "node:path";
 
-const withPWAConfig = withPWA({
-  dest: "public",
-  disable: process.env.NODE_ENV === "development",
-  register: true,
-});
-
+/**
+ * The app is fully static: all curriculum data is bundled at build time and
+ * progress lives in localStorage. `output: "export"` produces the `out/`
+ * directory that Cloudflare Pages serves directly — no server runtime.
+ */
 const nextConfig: NextConfig = {
+  output: "export",
+  trailingSlash: true,
   reactStrictMode: true,
   poweredByHeader: false,
-  compress: true,
   images: {
     unoptimized: true,
   },
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
 };
 
-export default withPWAConfig(nextConfig);
+export default nextConfig;
